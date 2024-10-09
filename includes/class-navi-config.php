@@ -109,6 +109,29 @@ class Navi_Config {
         }
     }
 
+    private function obtener_campos_disponibles($plantilla_datos) {
+        $campos_disponibles = array(
+            'nombre' => 'Nombre',
+            'coordenada' => 'Coordenada',
+            'logo' => 'Logo',
+            'pais' => 'País',
+            'correo' => 'Correo',
+            'telefono' => 'Teléfono',
+            'direccion' => 'Dirección',
+            'pagina_web' => 'Página web'
+        );
+
+        // Añadir niveles genéricos
+        for ($i = 1; $i <= 3; $i++) {
+            $nivel_key = "Nivel {$i}";
+            if (isset($plantilla_datos[0][$nivel_key]) && !empty($plantilla_datos[0][$nivel_key])) {
+                $campos_disponibles["nivel{$i}"] = "Nivel {$i} y datos";
+            }
+        }
+
+        return $campos_disponibles;
+    }
+
     public function ajax_obtener_config() {
         check_ajax_referer('navi_ajax_nonce', 'nonce');
     
@@ -152,28 +175,5 @@ class Navi_Config {
         }
     
         wp_send_json_success($config);
-    }
-
-    private function obtener_campos_disponibles($plantilla_datos) {
-        $campos_disponibles = array(
-            'nombre' => 'Nombre',
-            'coordenada' => 'Coordenada',
-            'logo' => 'Logo',
-            'pais' => 'País',
-            'correo' => 'Correo',
-            'telefono' => 'Teléfono',
-            'direccion' => 'Dirección',
-            'pagina_web' => 'Página web'
-        );
-
-        // Añadir niveles dinámicamente
-        for ($i = 1; $i <= 3; $i++) {
-            $nivel_key = "Nivel {$i}";
-            if (isset($plantilla_datos[0][$nivel_key]) && !empty($plantilla_datos[0][$nivel_key])) {
-                $campos_disponibles["nivel{$i}"] = $plantilla_datos[0][$nivel_key];
-            }
-        }
-
-        return $campos_disponibles;
     }
 }

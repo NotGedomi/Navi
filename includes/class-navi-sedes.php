@@ -580,4 +580,42 @@ class Navi_Sedes
             wp_send_json_error('No se pudo eliminar la sede.');
         }
     }
+
+
+    public function ajax_actualizar_logo() {
+        check_ajax_referer('navi_ajax_nonce', 'nonce');
+    
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('No tienes permisos para realizar esta acción.');
+        }
+    
+        $sede_id = intval($_POST['sede_id']);
+        
+        if (!isset($_FILES['logo'])) {
+            wp_send_json_error('No se ha subido ningún archivo.');
+        }
+    
+        $upload = wp_handle_upload($_FILES['logo'], array('test_form' => false));
+    
+        if (isset($upload['error'])) {
+            wp_send_json_error('Error al subir el archivo: ' . $upload['error']);
+        }
+    
+        $logo_url = $upload['url'];
+    
+        $tabla = $this->db->prefix . 'navi_sedes';
+        $resultado = $this->db->update(
+            $tabla,
+            array('logo' => $logo_url),
+            array('id' => $sede_id),
+            array('%s'),
+            array('%d')
+        );
+    
+        if ($resultado) {
+            wp_send_json_success(array('message' => 'Logo actualizado con éxito.', 'logo_url' => $logo_url));
+        } else {
+            wp_send_json_error('Error al actualizar el logo en la base de datos.');
+        }
+    }
 }

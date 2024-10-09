@@ -299,7 +299,11 @@
                             '<td>' + sede.nombre + '</td>' +
                             '<td>' + sede.nombre_plantilla + '</td>' +
                             '<td>' + sede.coordenada + '</td>' +
-                            '<td><img src="' + sede.logo + '" alt="Logo" style="max-width: 50px; max-height: 50px;"></td>' +
+                            '<td>' +
+                            '<img src="' + (sede.logo || '#') + '" alt="Logo" style="max-width: 50px; max-height: 50px;"><br>' +
+                            '<input type="file" class="logo-upload" data-sede-id="' + sede.id + '" accept="image/*">' +
+                            '<button class="button upload-logo" data-sede-id="' + sede.id + '">Subir Logo</button>' +
+                            '</td>' +
                             '<td>' + sede.pais + '</td>' +
                             '<td>' + sede.nivel1 + '</td>' +
                             '<td>' + sede.nivel1_dato + '</td>' +
@@ -311,9 +315,32 @@
                             '<td>' + sede.telefono + '</td>' +
                             '<td>' + sede.direccion + '</td>' +
                             '<td>' + (sede.pagina_web || '') + '</td>' +
-                            '<td><button class="button eliminar-sede" data-id="' + sede.id + '">Eliminar</button></td>' +
+                            '<td>' +
+                            '<button class="button eliminar-sede" data-id="' + sede.id + '">Eliminar</button>' +
+                            '</td>' +
                             '</tr>';
                         tabla.append(fila);
+                    });
+    
+                    // Manejar la subida de logos
+                    $('.upload-logo').off('click').on('click', function(e) {
+                        e.preventDefault();
+                        var sedeId = $(this).data('sede-id');
+                        var fileInput = $(this).siblings('.logo-upload')[0];
+                        var file = fileInput.files[0];
+                        if (file) {
+                            subirLogo(sedeId, file);
+                        } else {
+                            alert('Por favor, selecciona un archivo primero.');
+                        }
+                    });
+    
+                    // Manejar la eliminación de sedes
+                    $('.eliminar-sede').off('click').on('click', function() {
+                        var sede_id = $(this).data('id');
+                        if (confirm('¿Estás seguro de que deseas eliminar esta sede?')) {
+                            eliminarSede(sede_id);
+                        }
                     });
                 } else {
                     console.error('Error al cargar sedes:', response.data);
@@ -321,6 +348,36 @@
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 console.error('Error AJAX al cargar sedes:', textStatus, errorThrown);
+            }
+        });
+    }
+    
+    function subirLogo(sedeId, file) {
+        var formData = new FormData();
+        formData.append('action', 'navi_actualizar_logo');
+        formData.append('nonce', navi_ajax.nonce);
+        formData.append('sede_id', sedeId);
+        formData.append('logo', file);
+    
+        $.ajax({
+            url: navi_ajax.ajax_url,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    // Actualizar la imagen del logo en la tabla
+                    $('input.logo-upload[data-sede-id="' + sedeId + '"]')
+                        .siblings('img')
+                        .attr('src', response.data.logo_url);
+                } else {
+                    alert('Error: ' + response.data);
+                }
+            },
+            error: function() {
+                alert('Error al subir el logo. Por favor, inténtalo de nuevo.');
             }
         });
     }
@@ -388,14 +445,14 @@
                     var niveles = response.data;
                     var nivelesContainer = $('#niveles-container');
                     nivelesContainer.empty();
-
+    
                     niveles.forEach(function (nivel, index) {
                         nivelesContainer.append(
                             '<tr>' +
                             '<th><label for="nivel' + (index + 1) + '_dato">' + nivel.nombre + '</label></th>' +
                             '<td>' +
                             '<input type="hidden" name="nivel' + (index + 1) + '" value="' + nivel.nombre + '">' +
-                            '<select id="nivel' + (index + 1) + '_dato" name="nivel' + (index + 1) + '_dato" ' + (index === 0 ? 'required' : '') + ' ' + (index > 0 ? 'disabled' : '') + '>' +
+                            '<select id="nivel' + (index + 1) + '_dato" name="nivel' + (index + 1) + '_dato" ' + (index === 0 ? 'required' : '') + '>' +
                             '<option value="">Seleccione una opción</option>' +
                             '</select>' +
                             '</td>' +
@@ -403,21 +460,21 @@
                         );
                         cargarOpcionesNivel(plantilla_id, index + 1, pais);
                     });
-
+    
                     // Añadir eventos de cambio para cada nivel
                     niveles.forEach(function (nivel, index) {
                         $('#nivel' + (index + 1) + '_dato').on('change', function () {
                             var nivelActual = index + 1;
                             var valorSeleccionado = $(this).val();
-
+    
                             // Limpiar y deshabilitar niveles inferiores
                             for (var i = nivelActual + 1; i <= niveles.length; i++) {
                                 $('#nivel' + i + '_dato').empty().append('<option value="">Seleccione una opción</option>').prop('disabled', true);
                             }
-
+    
                             // Cargar opciones para el siguiente nivel si existe y se ha seleccionado un valor
                             if (nivelActual < niveles.length && valorSeleccionado) {
-                                cargarOpcionesNivel(plantilla_id, nivelActual + 1, pais, valorSeleccionado);
+                                cargarOpcionesNivel(plantilla_id, nivelActual + 1, pais);
                             }
                         });
                     });
@@ -425,8 +482,13 @@
             }
         });
     }
-
-    function cargarOpcionesNivel(plantilla_id, nivel, pais, nivelAnterior) {
+    
+    function cargarOpcionesNivel(plantilla_id, nivel, pais) {
+        var nivelesAnteriores = {};
+        for (var i = 1; i < nivel; i++) {
+            nivelesAnteriores['nivel' + i] = $('#nivel' + i + '_dato').val();
+        }
+    
         $.ajax({
             url: navi_ajax.ajax_url,
             type: 'POST',
@@ -436,7 +498,7 @@
                 plantilla_id: plantilla_id,
                 nivel: nivel,
                 pais: pais,
-                nivel_anterior: nivelAnterior
+                niveles_anteriores: JSON.stringify(nivelesAnteriores)
             },
             success: function (response) {
                 if (response.success) {

@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: Navi
- * Description: Plugin para manejar plantillas y sedes con múltiples configuraciones
+ * Description: Plugin para manejar plantillas y sedes, generar filtrado automático con mapas
  * Version: 2.0
- * Author: Tu Nombre
+ * Author: Invitro Agencia
  */
 
 if (!defined('ABSPATH')) {
@@ -89,6 +89,7 @@ add_action('wp_ajax_navi_eliminar_plantilla', array($GLOBALS['navi_plantillas'],
 add_action('wp_ajax_navi_eliminar_sede', array($GLOBALS['navi_sedes'], 'ajax_eliminar_sede'));
 add_action('wp_ajax_navi_obtener_paises', array($GLOBALS['navi_sedes'], 'ajax_obtener_paises'));
 add_action('wp_ajax_navi_obtener_niveles_por_pais', array($GLOBALS['navi_sedes'], 'ajax_obtener_niveles_por_pais'));
+add_action('wp_ajax_navi_actualizar_logo', array($GLOBALS['navi_sedes'], 'ajax_actualizar_logo'));
 
 // Agregar acciones AJAX para usuarios no logueados
 add_action('wp_ajax_nopriv_navi_obtener_plantillas', array($GLOBALS['navi_plantillas'], 'ajax_obtener_plantillas'));
