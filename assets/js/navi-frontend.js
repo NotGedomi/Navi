@@ -95,11 +95,20 @@
                     var niveles = response.data;
                     var nivelesContainer = container.find('#navi-filtro-niveles').empty();
                     nivelesCargados = {}; // Reiniciar los niveles cargados
-
+    
                     niveles.forEach(function (nivel, index) {
                         var nivelNum = index + 1;
                         var selectWrapper = $('<div class="custom-select navi-select-wrapper"></div>');
+                        
+                        // Add label
+                        var label = $('<label>', {
+                            for: 'navi-filtro-nivel-' + nivelNum,
+                            text: 'Selecciona tu ' + nivel.nombre
+                        });
+                        selectWrapper.append(label);
+    
                         var select = $('<select>', {
+                            id: 'navi-filtro-nivel-' + nivelNum,
                             class: 'navi-filtro-nivel',
                             'data-nivel': nivelNum,
                             disabled: nivelNum !== 1 // Solo el primer nivel estará habilitado inicialmente
@@ -107,13 +116,13 @@
                             value: '',
                             text: 'Seleccione ' + nivel.nombre
                         }));
-
+    
                         nivelesCargados['nivel' + nivelNum] = nivel.nombre;
-
+    
                         selectWrapper.append(select);
                         nivelesContainer.append(selectWrapper);
                     });
-
+    
                     initCustomSelects();
                     if (niveles.length > 0) {
                         cargarOpcionesNivel(container, plantilla_id, 1, pais);

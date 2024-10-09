@@ -500,28 +500,28 @@ class Navi_Sedes
         ));
     }
 
-    public function shortcode_filtro_sedes($atts)
-    {
+    public function shortcode_filtro_sedes($atts) {
         $atts = shortcode_atts(array(
             'plantilla_id' => '',
         ), $atts, 'navi_filtro_sedes');
-
+    
         if (empty($atts['plantilla_id'])) {
             return 'Error: Plantilla no especificada';
         }
-
+    
         $plantilla_id = intval($atts['plantilla_id']);
         $config = $this->obtener_config_plantilla($plantilla_id);
-
+    
         if (!$config) {
             return 'Error: Configuración no encontrada para la plantilla especificada';
         }
-
+    
         ob_start();
         ?>
         <div class="navi-filtro-sedes" data-plantilla-id="<?php echo esc_attr($plantilla_id); ?>">
             <div class="navi-filtros">
                 <div class="custom-select navi-select-wrapper">
+                    <label for="navi-filtro-pais">Selecciona tu país</label>
                     <select id="navi-filtro-pais">
                         <option value="">Selecciona un país</option>
                     </select>
