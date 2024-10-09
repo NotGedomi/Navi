@@ -517,21 +517,15 @@ class Navi_Sedes
             return 'Error: Configuración no encontrada para la plantilla especificada';
         }
 
-        wp_enqueue_script('navi-frontend', NAVI_PLUGIN_URL . 'assets/js/navi-frontend.js', array('jquery'), '1.0', true);
-
-        wp_localize_script('navi-frontend', 'navi_ajax', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('navi_ajax_nonce'),
-            'mostrar_mapa' => $config['mostrar_mapa']
-        ));
-
         ob_start();
         ?>
         <div class="navi-filtro-sedes" data-plantilla-id="<?php echo esc_attr($plantilla_id); ?>">
             <div class="navi-filtros">
-                <select id="navi-filtro-pais">
-                    <option value="">Selecciona un país</option>
-                </select>
+                <div class="custom-select navi-select-wrapper">
+                    <select id="navi-filtro-pais">
+                        <option value="">Selecciona un país</option>
+                    </select>
+                </div>
                 <div id="navi-filtro-niveles"></div>
             </div>
             <div id="navi-resultados-sedes"></div>
@@ -582,27 +576,28 @@ class Navi_Sedes
     }
 
 
-    public function ajax_actualizar_logo() {
+    public function ajax_actualizar_logo()
+    {
         check_ajax_referer('navi_ajax_nonce', 'nonce');
-    
+
         if (!current_user_can('manage_options')) {
             wp_send_json_error('No tienes permisos para realizar esta acción.');
         }
-    
+
         $sede_id = intval($_POST['sede_id']);
-        
+
         if (!isset($_FILES['logo'])) {
             wp_send_json_error('No se ha subido ningún archivo.');
         }
-    
+
         $upload = wp_handle_upload($_FILES['logo'], array('test_form' => false));
-    
+
         if (isset($upload['error'])) {
             wp_send_json_error('Error al subir el archivo: ' . $upload['error']);
         }
-    
+
         $logo_url = $upload['url'];
-    
+
         $tabla = $this->db->prefix . 'navi_sedes';
         $resultado = $this->db->update(
             $tabla,
@@ -611,7 +606,7 @@ class Navi_Sedes
             array('%s'),
             array('%d')
         );
-    
+
         if ($resultado) {
             wp_send_json_success(array('message' => 'Logo actualizado con éxito.', 'logo_url' => $logo_url));
         } else {
