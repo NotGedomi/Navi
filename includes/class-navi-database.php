@@ -1,22 +1,25 @@
 <?php
-class Navi_Database {
+class Navi_Database
+{
     private $wpdb;
 
-    public function __construct() {
+    public function __construct()
+    {
         global $wpdb;
         $this->wpdb = $wpdb;
     }
 
-    public function crear_tablas() {
+    public function crear_tablas()
+    {
         $charset_collate = $this->wpdb->get_charset_collate();
-    
+
         $sql_plantillas = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_plantillas (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             nombre varchar(100) NOT NULL,
             datos longtext NOT NULL,
             PRIMARY KEY (id)
         ) $charset_collate;";
-    
+
         $sql_sedes = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_sedes (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             plantilla_id mediumint(9) NOT NULL,
@@ -37,7 +40,7 @@ class Navi_Database {
             PRIMARY KEY (id),
             FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
         ) $charset_collate;";
-    
+
         $sql_config = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_config (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             plantilla_id mediumint(9) NOT NULL,
@@ -46,27 +49,29 @@ class Navi_Database {
             PRIMARY KEY (id),
             FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
         ) $charset_collate;";
-    
+
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_plantillas);
         dbDelta($sql_sedes);
         dbDelta($sql_config);
-    
+
         error_log('Tablas de Navi creadas o actualizadas');
     }
 
-    public function actualizar_plantillas_existentes() {
+    public function actualizar_plantillas_existentes()
+    {
         $tabla_plantillas = $this->wpdb->prefix . 'navi_plantillas';
         $tabla_sedes = $this->wpdb->prefix . 'navi_sedes';
         $plantillas = $this->wpdb->get_results("SELECT id, datos FROM $tabla_plantillas", ARRAY_A);
-    
+
         foreach ($plantillas as $plantilla) {
             $datos = json_decode($plantilla['datos'], true);
-            if (!is_array($datos)) continue;
-    
+            if (!is_array($datos))
+                continue;
+
             // Eliminar sedes existentes para esta plantilla
             $this->wpdb->delete($tabla_sedes, array('plantilla_id' => $plantilla['id']));
-    
+
             // Insertar nuevas sedes
             foreach ($datos as $sede) {
                 $this->wpdb->insert(
@@ -118,7 +123,20 @@ class Navi_Database {
 
     public function actualizar_estructura_tablas()
     {
-        $this->crear_tablas(); // Esto asegurará que las tablas tengan la estructura más reciente
+        $tabla_config = $this->wpdb->prefix . 'navi_config';
+        $columna = 'custom_render_function';
+
+        // Verificar si la columna existe
+        $columna_existe = $this->wpdb->get_results("SHOW COLUMNS FROM `$tabla_config` LIKE '$columna'");
+
+        if (!empty($columna_existe)) {
+            // La columna existe, así que la eliminamos
+            $this->wpdb->query("ALTER TABLE `$tabla_config` DROP COLUMN `$columna`");
+            error_log("Columna '$columna' eliminada de la tabla '$tabla_config'");
+        }
+
+        // Llamar a crear_tablas para asegurar que todas las tablas estén actualizadas
+        $this->crear_tablas();
     }
 
     public function migrar_datos_antiguos()

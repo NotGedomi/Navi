@@ -226,14 +226,14 @@
             plantilla_id: plantilla_id,
             pais: container.find('#navi-filtro-pais').val()
         };
-
+    
         container.find('.navi-filtro-nivel').each(function (index) {
             var valor = $(this).val();
             if (valor) {
                 filtros['nivel' + (index + 1)] = valor;
             }
         });
-
+    
         $.ajax({
             url: navi_ajax.ajax_url,
             type: 'POST',
@@ -244,8 +244,7 @@
             },
             success: function (response) {
                 if (response.success) {
-                    sedesData = response.data.sedes;
-                    mostrarSedes(container, response.data.sedes, response.data.campos_mostrar);
+                    mostrarSedes(container, response.data.sedes, response.data.campos_mostrar, response.data.use_custom_render);
                     if (response.data.mostrar_mapa) {
                         actualizarMapa(container, response.data.sedes);
                         container.find('#navi-mapa').show();
@@ -263,33 +262,40 @@
             }
         });
     }
-
+    
     function mostrarSedes(container, sedes, campos_mostrar) {
-        var resultadosContainer = container.find('#navi-resultados-sedes').empty();
-
+        var resultadosContainer = container.find('#navi-resultados-sedes');
+        var customRender = container.data('custom-render') === true;
+    
         if (sedes.length === 0) {
-            resultadosContainer.append('<p class="navi-no-results">No se encontraron sedes con los filtros seleccionados.</p>');
+            resultadosContainer.html('<p class="navi-no-results">No se encontraron sedes con los filtros seleccionados.</p>');
             return;
         }
-
-        sedes.forEach(function (sede) {
-            var sedeHtml = $('<div class="navi-sede"></div>');
-            campos_mostrar.forEach(function (campo) {
-                if (sede.hasOwnProperty(campo)) {
-                    if (campo === 'logo' && sede[campo]) {
-                        sedeHtml.append($('<img>', { src: sede[campo], alt: 'Logo', class: 'navi-sede-logo' }));
-                    } else if (campo === 'pagina_web') {
-                        sedeHtml.append($('<p class="navi-sede-' + campo + '"><strong>' + campo + ':</strong> <a href="' + sede[campo] + '" target="_blank">' + sede[campo] + '</a></p>'));
-                    } else if (campo.includes('nivel') && !campo.includes('_dato')) {
-                        var nivelDato = campo + '_dato';
-                        sedeHtml.append($('<p class="navi-sede-' + campo + '"><strong>' + sede[campo] + ':</strong> ' + sede[nivelDato] + '</p>'));
-                    } else if (!campo.includes('_dato')) {
-                        sedeHtml.append($('<p class="navi-sede-' + campo + '"><strong>' + campo + ':</strong> ' + sede[campo] + '</p>'));
+    
+        if (customRender && typeof window.naviCustomRender === 'function') {
+            var customContent = window.naviCustomRender(sedes, campos_mostrar, false);
+            resultadosContainer.html(customContent.sedesHtml || '');
+        } else {
+            resultadosContainer.empty();
+            sedes.forEach(function (sede) {
+                var sedeHtml = $('<div class="navi-sede"></div>');
+                campos_mostrar.forEach(function (campo) {
+                    if (sede.hasOwnProperty(campo)) {
+                        if (campo === 'logo' && sede[campo]) {
+                            sedeHtml.append($('<img>', { src: sede[campo], alt: 'Logo', class: 'navi-sede-logo' }));
+                        } else if (campo === 'pagina_web') {
+                            sedeHtml.append($('<p class="navi-sede-' + campo + '"><strong>' + campo + ':</strong> <a href="' + sede[campo] + '" target="_blank">' + sede[campo] + '</a></p>'));
+                        } else if (campo.includes('nivel') && !campo.includes('_dato')) {
+                            var nivelDato = campo + '_dato';
+                            sedeHtml.append($('<p class="navi-sede-' + campo + '"><strong>' + sede[campo] + ':</strong> ' + sede[nivelDato] + '</p>'));
+                        } else if (!campo.includes('_dato')) {
+                            sedeHtml.append($('<p class="navi-sede-' + campo + '"><strong>' + campo + ':</strong> ' + sede[campo] + '</p>'));
+                        }
                     }
-                }
+                });
+                resultadosContainer.append(sedeHtml);
             });
-            resultadosContainer.append(sedeHtml);
-        });
+        }
     }
 
     function actualizarMapa(container, sedes) {
@@ -297,26 +303,30 @@
             console.error('Leaflet no está disponible. No se puede actualizar el mapa.');
             return;
         }
-
-        var mapaContainer = container.find('#navi-mapa');
+    
+        var mapaContainer = container.find('#navi-mapa-container');
         if (mapaContainer.length === 0) return;
-
+    
         if (container.data('mapa')) {
             container.data('mapa').remove();
         }
-
-        mapaContainer.css({
-            'height': '400px',
-            'width': '100%'
-        });
-
-        var mapa = L.map(mapaContainer[0]).setView([0, 0], 2);
+    
+        var customRender = container.data('custom-render') === true;
+    
+        if (customRender && typeof window.naviCustomRender === 'function') {
+            var customContent = window.naviCustomRender(sedes, null, true);
+            mapaContainer.html(customContent.mapHtml || '<div id="navi-mapa"></div>');
+        } else {
+            mapaContainer.html('<div id="navi-mapa"></div>');
+        }
+    
+        var mapa = L.map('navi-mapa').setView([0, 0], 2);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(mapa);
-
+    
         var marcadores = L.featureGroup().addTo(mapa);
-
+    
         sedes.forEach(function (sede, index) {
             if (sede.coordenada) {
                 var coordenadas = sede.coordenada.split(',').map(parseFloat);
@@ -331,12 +341,18 @@
                     shape: 'square',
                     prefix: 'fa'
                 });
-
+    
                 var marcador = L.marker(coordenadas, { icon: icono }).addTo(marcadores);
                 marcador.sedeData = sede;
                 marcador.sedeIndex = index;
                 marcador.bindPopup(customPopupContent(sede));
-
+    
+                // Añadir data-attribute al elemento del marcador
+                var marcadorElement = marcador.getElement();
+                if (marcadorElement) {
+                    marcadorElement.setAttribute('data-sede-id', 'sede-' + (sede.id || index));
+                }
+    
                 marcador.on('click', function () {
                     if (typeof window.onSedeMarkerClick === 'function') {
                         window.onSedeMarkerClick(this.sedeData, this.sedeIndex);
@@ -344,13 +360,13 @@
                 });
             }
         });
-
+    
         if (marcadores.getBounds().isValid()) {
             mapa.fitBounds(marcadores.getBounds(), { padding: [50, 50] });
         }
-
+    
         container.data('mapa', mapa);
-
+    
         setTimeout(function () {
             mapa.invalidateSize();
         }, 100);

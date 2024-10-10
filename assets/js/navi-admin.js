@@ -170,7 +170,7 @@
         var pagina_web = $('#pagina_web').val().trim();
 
         if (!plantilla_id) {
-            alert('Por favor, seleccione una plantilla.');
+            alert('Por favor, selecciona una plantilla.');
             return false;
         }
 
@@ -185,7 +185,7 @@
         }
 
         if (pais === '') {
-            alert('Por favor, seleccione un país.');
+            alert('Por favor, selecciona un país.');
             return false;
         }
 

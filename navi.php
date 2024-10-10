@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Navi
  * Description: Plugin para manejar plantillas y sedes, generar filtrado automático con mapas
- * Version: 2.5
+ * Version: 2.6
  * Author: Invitro Agencia
  */
 
@@ -30,11 +30,19 @@ $navi_config = new Navi_Config();
 // Activación del plugin
 register_activation_hook(__FILE__, 'navi_activar_plugin');
 
-function navi_activar_plugin()
-{
+function navi_activar_plugin() {
     global $navi_database;
     $navi_database->crear_tablas();
+    $navi_database->actualizar_estructura_tablas();
     error_log('Plugin Navi activado y tablas creadas/actualizadas');
+}
+
+// Manejar actualizaciones
+add_action('plugins_loaded', 'navi_actualizar_plugin');
+
+function navi_actualizar_plugin() {
+    global $navi_database;
+    $navi_database->actualizar_estructura_tablas();
 }
 
 // Desactivación del plugin

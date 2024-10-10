@@ -464,6 +464,50 @@ class Navi_Sedes
         wp_send_json_success($opciones);
     }
 
+    public function shortcode_filtro_sedes($atts)
+    {
+        $atts = shortcode_atts(array(
+            'plantilla_id' => '',
+            'custom_render' => 'false',
+        ), $atts, 'navi_filtro_sedes');
+
+        if (empty($atts['plantilla_id'])) {
+            return 'Error: Plantilla no especificada';
+        }
+
+        $plantilla_id = intval($atts['plantilla_id']);
+        $config = $this->obtener_config_plantilla($plantilla_id);
+
+        if (!$config) {
+            return 'Error: Configuración no encontrada para la plantilla especificada';
+        }
+
+        $custom_render = filter_var($atts['custom_render'], FILTER_VALIDATE_BOOLEAN);
+
+        ob_start();
+        ?>
+        <div class="navi-filtro-sedes" data-plantilla-id="<?php echo esc_attr($plantilla_id); ?>"
+            data-custom-render="<?php echo $custom_render ? 'true' : 'false'; ?>">
+            <div class="navi-filtros">
+                <div class="custom-select navi-select-wrapper">
+                    <label for="navi-filtro-pais">Selecciona tu país</label>
+                    <select id="navi-filtro-pais">
+                        <option value="">Seleccione un país</option>
+                    </select>
+                </div>
+                <div id="navi-filtro-niveles"></div>
+            </div>
+            <div class="navi-data">
+                <div id="navi-resultados-sedes"></div>
+                <?php if ($config['mostrar_mapa']): ?>
+                    <div id="navi-mapa-container"></div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
     public function ajax_filtrar_sedes()
     {
         if (!check_ajax_referer('navi_ajax_nonce', 'nonce', false)) {
@@ -496,45 +540,8 @@ class Navi_Sedes
         wp_send_json_success(array(
             'sedes' => $sedes,
             'campos_mostrar' => $campos_mostrar,
-            'mostrar_mapa' => $config['mostrar_mapa']
+            'mostrar_mapa' => $config['mostrar_mapa'],
         ));
-    }
-
-    public function shortcode_filtro_sedes($atts) {
-        $atts = shortcode_atts(array(
-            'plantilla_id' => '',
-        ), $atts, 'navi_filtro_sedes');
-    
-        if (empty($atts['plantilla_id'])) {
-            return 'Error: Plantilla no especificada';
-        }
-    
-        $plantilla_id = intval($atts['plantilla_id']);
-        $config = $this->obtener_config_plantilla($plantilla_id);
-    
-        if (!$config) {
-            return 'Error: Configuración no encontrada para la plantilla especificada';
-        }
-    
-        ob_start();
-        ?>
-        <div class="navi-filtro-sedes" data-plantilla-id="<?php echo esc_attr($plantilla_id); ?>">
-            <div class="navi-filtros">
-                <div class="custom-select navi-select-wrapper">
-                    <label for="navi-filtro-pais">Selecciona tu país</label>
-                    <select id="navi-filtro-pais">
-                        <option value="">Selecciona un país</option>
-                    </select>
-                </div>
-                <div id="navi-filtro-niveles"></div>
-            </div>
-            <div id="navi-resultados-sedes"></div>
-            <?php if ($config['mostrar_mapa']): ?>
-                <div id="navi-mapa" style="height: 400px;"></div>
-            <?php endif; ?>
-        </div>
-        <?php
-        return ob_get_clean();
     }
 
     private function obtener_config_plantilla($plantilla_id)
