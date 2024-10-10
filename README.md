@@ -34,6 +34,9 @@ Navi es un plugin de WordPress diseñado para gestionar y visualizar informació
 
 3. Personalizar la visualización:
    Active el renderizado personalizado en el shortcode y defina la función `naviCustomRender` en su JavaScript.
+   ```
+   [navi_filtro_sedes plantilla_id="ID_DE_SU_PLANTILLA" custom_render="true"]
+   ```
 
 ## Personalización Avanzada
 
