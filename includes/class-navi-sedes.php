@@ -12,110 +12,106 @@ class Navi_Sedes
     public function render_pagina()
     {
         ?>
-        <div class="wrap">
+        <div class="wrap navi-admin">
             <h1>Gestionar Sedes</h1>
-            <form id="navi-sede-form" enctype="multipart/form-data">
-                <table class="form-table">
-                    <tr>
-                        <th><label for="plantilla_id">Plantilla</label></th>
-                        <td>
-                            <select id="plantilla_id" name="plantilla_id" required>
-                                <option value="">Seleccione una plantilla</option>
-                                <?php
-                                $plantillas = $this->obtener_plantillas();
-                                foreach ($plantillas as $plantilla) {
-                                    echo "<option value='{$plantilla['id']}'>{$plantilla['nombre']}</option>";
-                                }
-                                ?>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="nombre">Nombre de la Sede</label></th>
-                        <td><input type="text" id="nombre" name="nombre" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="coordenada">Coordenada</label></th>
-                        <td><input type="text" id="coordenada" name="coordenada" required
-                                pattern="^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$"
-                                title="Formato: latitud,longitud (ej: 41.40338, 2.17403)"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="logo">Logo</label></th>
-                        <td>
-                            <input type="file" id="logo" name="logo" accept="image/*">
-                            <div id="logo-preview"></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="pais">País</label></th>
-                        <td>
-                            <select id="pais" name="pais" required>
-                                <option value="">Seleccione un país</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr id="niveles-container">
+            <div class="navi-card">
+                <h2>Agregar Nueva Sede</h2>
+                <form id="navi-sede-form" enctype="multipart/form-data">
+                    <div class="navi-form-group">
+                        <label for="plantilla_id">Plantilla</label>
+                        <select id="plantilla_id" name="plantilla_id" required>
+                            <option value="">Seleccione una plantilla</option>
+                            <?php
+                            $plantillas = $this->obtener_plantillas();
+                            foreach ($plantillas as $plantilla) {
+                                echo "<option value='{$plantilla['id']}'>{$plantilla['nombre']}</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="nombre">Nombre de la Sede</label>
+                        <input type="text" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="coordenada">Coordenada</label>
+                        <input type="text" id="coordenada" name="coordenada" required
+                            pattern="^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$"
+                            title="Formato: latitud,longitud (ej: 41.40338, 2.17403)">
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="logo">Logo</label>
+                        <input type="file" id="logo" name="logo" accept="image/*">
+                        <div id="logo-preview" class="navi-preview"></div>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="marker">Marker</label>
+                        <input type="file" id="marker" name="marker" accept="image/*">
+                        <div id="marker-preview" class="navi-preview"></div>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="fondo">Fondo</label>
+                        <input type="file" id="fondo" name="fondo" accept="image/*">
+                        <div id="fondo-preview" class="navi-preview"></div>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="fondo2">Fondo 2</label>
+                        <input type="file" id="fondo2" name="fondo2" accept="image/*">
+                        <div id="fondo2-preview" class="navi-preview"></div>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="pais">País</label>
+                        <select id="pais" name="pais" required>
+                            <option value="">Seleccione un país</option>
+                        </select>
+                    </div>
+                    <div id="niveles-container">
                         <!-- Los niveles se cargarán dinámicamente aquí -->
-                    </tr>
-                    <tr>
-                        <th><label for="correo">Correo de contacto</label></th>
-                        <td><input type="email" id="correo" name="correo" required></td>
-                    </tr>
-                    <tr>
-                        <th><label for="telefono">Número de teléfono</label></th>
-                        <td><input type="tel" id="telefono" name="telefono" required pattern="^\+?[0-9]{6,15}$"
-                                title="Número de teléfono (6-15 dígitos, puede incluir + al inicio)"></td>
-                    </tr>
-                    <tr>
-                        <th><label for="direccion">Dirección</label></th>
-                        <td><textarea id="direccion" name="direccion" required></textarea></td>
-                    </tr>
-                    <tr>
-                        <th><label for="pagina_web">Página web</label></th>
-                        <td><input type="url" id="pagina_web" name="pagina_web"></td>
-                    </tr>
-                </table>
-                <p class="submit">
-                    <input type="submit" name="submit" id="submit" class="button button-primary" value="Guardar Sede">
-                </p>
-            </form>
-            <div id="navi-sede-mensaje"></div>
-            <h2>Sedes Registradas</h2>
-            <select id="filtro-plantilla">
-                <option value="">Todas las plantillas</option>
-                <?php
-                $plantillas = $this->obtener_plantillas();
-                foreach ($plantillas as $plantilla) {
-                    echo "<option value='{$plantilla['id']}'>{$plantilla['nombre']}</option>";
-                }
-                ?>
-            </select>
-            <table class="wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Plantilla</th>
-                        <th>Coordenada</th>
-                        <th>Logo</th>
-                        <th>País</th>
-                        <th>Nivel 1</th>
-                        <th>Nivel 1 Dato</th>
-                        <th>Nivel 2</th>
-                        <th>Nivel 2 Dato</th>
-                        <th>Nivel 3</th>
-                        <th>Nivel 3 Dato</th>
-                        <th>Correo</th>
-                        <th>Teléfono</th>
-                        <th>Dirección</th>
-                        <th>Página web</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="navi-sedes-tabla">
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="correo">Correo de contacto</label>
+                        <input type="email" id="correo" name="correo" required>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="telefono">Número de teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" required pattern="^\+?[0-9]{6,15}$"
+                            title="Número de teléfono (6-15 dígitos, puede incluir + al inicio)">
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="direccion">Dirección</label>
+                        <textarea id="direccion" name="direccion" required></textarea>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="horario">Horario</label>
+                        <textarea id="horario" name="horario" required></textarea>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="pagina_web">Página web</label>
+                        <input type="url" id="pagina_web" name="pagina_web">
+                    </div>
+                    <button type="submit" class="navi-button navi-button-primary">Guardar Sede</button>
+                </form>
+                <div id="navi-sede-mensaje"></div>
+            </div>
+
+            <div class="navi-card">
+                <h2>Sedes Registradas</h2>
+                <div class="navi-form-group">
+                    <label for="filtro-plantilla">Filtrar por plantilla</label>
+                    <select id="filtro-plantilla">
+                        <option value="">Todas las plantillas</option>
+                        <?php
+                        $plantillas = $this->obtener_plantillas();
+                        foreach ($plantillas as $plantilla) {
+                            echo "<option value='{$plantilla['id']}'>{$plantilla['nombre']}</option>";
+                        }
+                        ?>
+                    </select>
+                </div>
+                <div id="navi-sedes-lista" class="navi-list">
                     <!-- Los datos se cargarán aquí dinámicamente -->
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
         <?php
     }
@@ -148,6 +144,7 @@ class Navi_Sedes
         $correo = sanitize_email($_POST['correo']);
         $telefono = sanitize_text_field($_POST['telefono']);
         $direccion = sanitize_textarea_field($_POST['direccion']);
+        $horario = sanitize_textarea_field($_POST['horario']);
         $pagina_web = esc_url_raw($_POST['pagina_web']);
 
         // Validaciones
@@ -177,6 +174,7 @@ class Navi_Sedes
             'correo' => $correo,
             'telefono' => $telefono,
             'direccion' => $direccion,
+            'horario' => $horario,
             'pagina_web' => $pagina_web
         );
 
@@ -185,6 +183,29 @@ class Navi_Sedes
             $upload = wp_handle_upload($_FILES['logo'], array('test_form' => false));
             if (isset($upload['url'])) {
                 $datos_actualizar['logo'] = $upload['url'];
+            }
+        }
+
+        // Manejar la actualización del marker si se proporciona uno nuevo
+        if (isset($_FILES['marker']) && !empty($_FILES['marker']['name'])) {
+            $upload = wp_handle_upload($_FILES['marker'], array('test_form' => false));
+            if (isset($upload['url'])) {
+                $datos_actualizar['marker'] = $upload['url'];
+            }
+        }
+
+        // Manejar la actualización del fondo si se proporciona uno nuevo
+        if (isset($_FILES['fondo']) && !empty($_FILES['fondo']['name'])) {
+            $upload = wp_handle_upload($_FILES['fondo'], array('test_form' => false));
+            if (isset($upload['url'])) {
+                $datos_actualizar['fondo'] = $upload['url'];
+            }
+        }
+        // Manejar la actualización del fondo2 si se proporciona uno nuevo
+        if (isset($_FILES['fondo2']) && !empty($_FILES['fondo2']['name'])) {
+            $upload = wp_handle_upload($_FILES['fondo2'], array('test_form' => false));
+            if (isset($upload['url'])) {
+                $datos_actualizar['fondo2'] = $upload['url'];
             }
         }
 
@@ -225,6 +246,7 @@ class Navi_Sedes
         $correo = sanitize_email($_POST['correo']);
         $telefono = sanitize_text_field($_POST['telefono']);
         $direccion = sanitize_textarea_field($_POST['direccion']);
+        $horario = sanitize_textarea_field($_POST['horario']);
         $pagina_web = esc_url_raw($_POST['pagina_web']);
 
         // Validaciones
@@ -249,6 +271,33 @@ class Navi_Sedes
             }
         }
 
+        // Manejar la subida del marker
+        $marker_url = '';
+        if (isset($_FILES['marker'])) {
+            $upload = wp_handle_upload($_FILES['marker'], array('test_form' => false));
+            if (isset($upload['url'])) {
+                $marker_url = $upload['url'];
+            }
+        }
+
+        // Manejar la subida del fondo
+        $fondo_url = '';
+        if (isset($_FILES['fondo'])) {
+            $upload = wp_handle_upload($_FILES['fondo'], array('test_form' => false));
+            if (isset($upload['url'])) {
+                $fondo_url = $upload['url'];
+            }
+        }
+
+        // Manejar la subida del fondo
+        $fondo2_url = '';
+        if (isset($_FILES['fondo2'])) {
+            $upload = wp_handle_upload($_FILES['fondo2'], array('test_form' => false));
+            if (isset($upload['url'])) {
+                $fondo2_url = $upload['url'];
+            }
+        }
+
         $tabla = $this->db->prefix . 'navi_sedes';
         $resultado = $this->db->insert(
             $tabla,
@@ -257,6 +306,9 @@ class Navi_Sedes
                 'nombre' => $nombre,
                 'coordenada' => $coordenada,
                 'logo' => $logo_url,
+                'marker' => $marker_url,
+                'fondo' => $fondo_url,
+                'fondo2' => $fondo2_url,
                 'pais' => $pais,
                 'nivel1' => $nivel1,
                 'nivel1_dato' => $nivel1_dato,
@@ -267,9 +319,10 @@ class Navi_Sedes
                 'correo' => $correo,
                 'telefono' => $telefono,
                 'direccion' => $direccion,
+                'horario' => $horario,
                 'pagina_web' => $pagina_web
             ),
-            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+            array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
         );
 
         if ($resultado) {
@@ -284,22 +337,149 @@ class Navi_Sedes
         check_ajax_referer('navi_ajax_nonce', 'nonce');
 
         $plantilla_id = isset($_POST['plantilla_id']) ? intval($_POST['plantilla_id']) : 0;
+        $pagina = isset($_POST['pagina']) ? intval($_POST['pagina']) : 1;
+        $por_pagina = 10; // Número de sedes por página
 
         $tabla_sedes = $this->db->prefix . 'navi_sedes';
         $tabla_plantillas = $this->db->prefix . 'navi_plantillas';
 
-        $query = "SELECT s.*, p.nombre as nombre_plantilla 
-              FROM $tabla_sedes s
-              JOIN $tabla_plantillas p ON s.plantilla_id = p.id";
+        $query = "SELECT s.id, s.nombre, p.nombre as nombre_plantilla 
+                  FROM $tabla_sedes s
+                  JOIN $tabla_plantillas p ON s.plantilla_id = p.id";
 
+        $args = array();
         if ($plantilla_id > 0) {
             $query .= " WHERE s.plantilla_id = %d";
-            $sedes = $this->db->get_results($this->db->prepare($query, $plantilla_id), ARRAY_A);
-        } else {
-            $sedes = $this->db->get_results($query, ARRAY_A);
+            $args[] = $plantilla_id;
         }
 
-        wp_send_json_success($sedes);
+        $total_query = "SELECT COUNT(1) FROM ($query) AS combined_table";
+        $total = $this->db->get_var($this->db->prepare($total_query, $args));
+
+        $total_paginas = max(1, ceil($total / $por_pagina));
+        $pagina = min($pagina, $total_paginas);
+
+        $offset = ($pagina - 1) * $por_pagina;
+        $query .= " LIMIT %d OFFSET %d";
+        $args[] = $por_pagina;
+        $args[] = $offset;
+
+        $sedes = $this->db->get_results($this->db->prepare($query, $args), ARRAY_A);
+
+        wp_send_json_success(array(
+            'sedes' => $sedes,
+            'total_paginas' => $total_paginas,
+            'pagina_actual' => $pagina
+        ));
+    }
+
+    public function ajax_obtener_sede()
+    {
+        check_ajax_referer('navi_ajax_nonce', 'nonce');
+
+        $sede_id = isset($_POST['sede_id']) ? intval($_POST['sede_id']) : 0;
+
+        $tabla_sedes = $this->db->prefix . 'navi_sedes';
+        $sede = $this->db->get_row($this->db->prepare(
+            "SELECT * FROM $tabla_sedes WHERE id = %d",
+            $sede_id
+        ), ARRAY_A);
+
+        if ($sede) {
+            wp_send_json_success($sede);
+        } else {
+            wp_send_json_error('Sede no encontrada');
+        }
+    }
+
+    public function ajax_guardar_cambios_sede()
+    {
+        check_ajax_referer('navi_ajax_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('No tienes permisos para realizar esta acción.');
+        }
+
+        $sede_id = isset($_POST['sede_id']) ? intval($_POST['sede_id']) : 0;
+
+        $datos_actualizar = array(
+            'nombre' => sanitize_text_field($_POST['nombre']),
+            'coordenada' => sanitize_text_field($_POST['coordenada']),
+            'pais' => sanitize_text_field($_POST['pais']),
+            'nivel1_dato' => sanitize_text_field($_POST['nivel1_dato']),
+            'nivel2_dato' => isset($_POST['nivel2_dato']) ? sanitize_text_field($_POST['nivel2_dato']) : '',
+            'nivel3_dato' => isset($_POST['nivel3_dato']) ? sanitize_text_field($_POST['nivel3_dato']) : '',
+            'correo' => sanitize_email($_POST['correo']),
+            'telefono' => sanitize_text_field($_POST['telefono']),
+            'direccion' => sanitize_textarea_field($_POST['direccion']),
+            'horario' => sanitize_textarea_field($_POST['horario']),
+            'pagina_web' => esc_url_raw($_POST['pagina_web'])
+        );
+
+        // Manejar la subida del logo
+        if (!empty($_FILES['logo']['name'])) {
+            $logo_url = $this->subir_imagen('logo', $sede_id);
+            if ($logo_url) {
+                $datos_actualizar['logo'] = $logo_url;
+            }
+        }
+
+        // Manejar la subida del marker
+        if (!empty($_FILES['marker']['name'])) {
+            $marker_url = $this->subir_imagen('marker', $sede_id);
+            if ($marker_url) {
+                $datos_actualizar['marker'] = $marker_url;
+            }
+        }
+
+        // Manejar la subida del fondo
+        if (!empty($_FILES['fondo']['name'])) {
+            $fondo_url = $this->subir_imagen('fondo', $sede_id);
+            if ($fondo_url) {
+                $datos_actualizar['fondo'] = $fondo_url;
+            }
+        }
+
+        // Manejar la subida del fondo
+        if (!empty($_FILES['fondo2']['name'])) {
+            $fondo2_url = $this->subir_imagen('fondo2', $sede_id);
+            if ($fondo2_url) {
+                $datos_actualizar['fondo2'] = $fondo2_url;
+            }
+        }
+
+        $tabla_sedes = $this->db->prefix . 'navi_sedes';
+        $resultado = $this->db->update(
+            $tabla_sedes,
+            $datos_actualizar,
+            array('id' => $sede_id),
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'),
+            array('%d')
+        );
+
+        if ($resultado !== false) {
+            wp_send_json_success('Cambios guardados con éxito');
+        } else {
+            wp_send_json_error('Error al guardar los cambios');
+        }
+    }
+
+    private function subir_imagen($tipo, $sede_id)
+    {
+        if (!function_exists('wp_handle_upload')) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+        }
+
+        $uploaded_file = $_FILES[$tipo];
+        $upload_overrides = array('test_form' => false);
+        $movefile = wp_handle_upload($uploaded_file, $upload_overrides);
+
+        if ($movefile && !isset($movefile['error'])) {
+            return $movefile['url'];
+        } else {
+            error_log("Error al subir $tipo: " . $movefile['error']);
+            return false;
+        }
     }
 
     public function ajax_obtener_niveles()
@@ -484,10 +664,23 @@ class Navi_Sedes
 
         $custom_render = filter_var($atts['custom_render'], FILTER_VALIDATE_BOOLEAN);
 
+        // Crear una sede vacía para evitar errores en la plantilla
+        $sede_vacia = array(
+            'fondo' => '',
+            'fondo2' => '',
+            'nombre' => '',
+            'direccion' => '',
+            'telefono' => '',
+            'correo' => '',
+            'horario' => '',
+            'pagina_web' => '',
+        );
+
         ob_start();
         ?>
         <div class="navi-filtro-sedes" data-plantilla-id="<?php echo esc_attr($plantilla_id); ?>"
-            data-custom-render="<?php echo $custom_render ? 'true' : 'false'; ?>">
+            data-custom-render="<?php echo $custom_render ? 'true' : 'false'; ?>"
+            data-mostrar-formulario="<?php echo $config['mostrar_formulario'] ? 'true' : 'false'; ?>">
             <div class="navi-filtros">
                 <div class="custom-select navi-select-wrapper">
                     <label for="navi-filtro-pais">Selecciona tu país</label>
@@ -504,6 +697,12 @@ class Navi_Sedes
                 <?php endif; ?>
             </div>
         </div>
+        <?php if ($config['mostrar_formulario']): ?>
+            <?php
+            $sede = $sede_vacia; // Pasar la sede vacía a la plantilla
+            include(NAVI_PLUGIN_DIR . 'templates/contact-form-template.php');
+        ?>
+        <?php endif; ?>
         <?php
         return ob_get_clean();
     }
@@ -517,10 +716,19 @@ class Navi_Sedes
 
         $filtros = $_POST['filtros'];
         $plantilla_id = intval($filtros['plantilla_id']);
+        $pais = sanitize_text_field($filtros['pais']);
+
+        // Verificar si hay redirección para este país
+        $redireccion = $this->obtener_redireccion($plantilla_id, $pais);
+        if ($redireccion) {
+            wp_send_json_success(array('redireccion' => $redireccion));
+            return;
+        }
+
         $tabla = $this->db->prefix . 'navi_sedes';
 
         $query = "SELECT * FROM $tabla WHERE plantilla_id = %d AND pais = %s";
-        $params = array($plantilla_id, $filtros['pais']);
+        $params = array($plantilla_id, $pais);
 
         for ($i = 1; $i <= 3; $i++) {
             $nivel_key = "nivel{$i}_dato";
@@ -544,6 +752,16 @@ class Navi_Sedes
         ));
     }
 
+    private function obtener_redireccion($plantilla_id, $pais)
+    {
+        $tabla_redirecciones = $this->db->prefix . 'navi_redirecciones';
+        return $this->db->get_var($this->db->prepare(
+            "SELECT url_redireccion FROM $tabla_redirecciones WHERE plantilla_id = %d AND pais = %s",
+            $plantilla_id,
+            $pais
+        ));
+    }
+
     private function obtener_config_plantilla($plantilla_id)
     {
         $tabla = $this->db->prefix . 'navi_config';
@@ -554,7 +772,7 @@ class Navi_Sedes
 
         if (!$config) {
             $config = array(
-                'campos_mostrar' => json_encode(array('nombre', 'direccion', 'telefono', 'correo')),
+                'campos_mostrar' => json_encode(array('nombre', 'direccion', 'horario', 'telefono', 'correo')),
                 'mostrar_mapa' => 1
             );
         }
@@ -618,6 +836,120 @@ class Navi_Sedes
             wp_send_json_success(array('message' => 'Logo actualizado con éxito.', 'logo_url' => $logo_url));
         } else {
             wp_send_json_error('Error al actualizar el logo en la base de datos.');
+        }
+    }
+
+    public function ajax_actualizar_marker()
+    {
+        check_ajax_referer('navi_ajax_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('No tienes permisos para realizar esta acción.');
+        }
+
+        $sede_id = intval($_POST['sede_id']);
+
+        if (!isset($_FILES['marker'])) {
+            wp_send_json_error('No se ha subido ningún archivo.');
+        }
+
+        $upload = wp_handle_upload($_FILES['marker'], array('test_form' => false));
+
+        if (isset($upload['error'])) {
+            wp_send_json_error('Error al subir el archivo: ' . $upload['error']);
+        }
+
+        $marker_url = $upload['url'];
+
+        $tabla = $this->db->prefix . 'navi_sedes';
+        $resultado = $this->db->update(
+            $tabla,
+            array('marker' => $marker_url),
+            array('id' => $sede_id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($resultado) {
+            wp_send_json_success(array('message' => 'Marker actualizado con éxito.', 'marker_url' => $marker_url));
+        } else {
+            wp_send_json_error('Error al actualizar el marker en la base de datos.');
+        }
+    }
+
+    public function ajax_actualizar_fondo()
+    {
+        check_ajax_referer('navi_ajax_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('No tienes permisos para realizar esta acción.');
+        }
+
+        $sede_id = intval($_POST['sede_id']);
+
+        if (!isset($_FILES['fondo'])) {
+            wp_send_json_error('No se ha subido ningún archivo.');
+        }
+
+        $upload = wp_handle_upload($_FILES['fondo'], array('test_form' => false));
+
+        if (isset($upload['error'])) {
+            wp_send_json_error('Error al subir el archivo: ' . $upload['error']);
+        }
+
+        $fondo_url = $upload['url'];
+
+        $tabla = $this->db->prefix . 'navi_sedes';
+        $resultado = $this->db->update(
+            $tabla,
+            array('fondo' => $fondo_url),
+            array('id' => $sede_id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($resultado) {
+            wp_send_json_success(array('message' => 'Fondo actualizado con éxito.', 'fondo_url' => $fondo_url));
+        } else {
+            wp_send_json_error('Error al actualizar el Fondo en la base de datos.');
+        }
+    }
+
+    public function ajax_actualizar_fondo2()
+    {
+        check_ajax_referer('navi_ajax_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('No tienes permisos para realizar esta acción.');
+        }
+
+        $sede_id = intval($_POST['sede_id']);
+
+        if (!isset($_FILES['fondo2'])) {
+            wp_send_json_error('No se ha subido ningún archivo.');
+        }
+
+        $upload = wp_handle_upload($_FILES['fondo2'], array('test_form' => false));
+
+        if (isset($upload['error'])) {
+            wp_send_json_error('Error al subir el archivo: ' . $upload['error']);
+        }
+
+        $fondo2_url = $upload['url'];
+
+        $tabla = $this->db->prefix . 'navi_sedes';
+        $resultado = $this->db->update(
+            $tabla,
+            array('fondo2' => $fondo2_url),
+            array('id' => $sede_id),
+            array('%s'),
+            array('%d')
+        );
+
+        if ($resultado) {
+            wp_send_json_success(array('message' => 'Fondo 2 actualizado con éxito.', 'fondo2_url' => $fondo2_url));
+        } else {
+            wp_send_json_error('Error al actualizar el Fondo 2 en la base de datos.');
         }
     }
 }

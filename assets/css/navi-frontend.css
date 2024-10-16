@@ -113,13 +113,17 @@
         }
     }
 
-    #navi-resultados-sedes {
-        z-index: 0;
-    }
+    .navi-data {
+        display: flex;
+        
+        #navi-resultados-sedes {
+            z-index: 0;
+        }
 
-    #navi-mapa {
-        z-index: 0;
-        border-radius: 0.8rem;
+        #navi-mapa {
+            z-index: 0;
+            border-radius: 0.8rem;
+        }
     }
 }
 

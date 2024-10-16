@@ -19,18 +19,21 @@ require_once NAVI_PLUGIN_DIR . 'includes/class-navi-database.php';
 require_once NAVI_PLUGIN_DIR . 'includes/class-navi-plantillas.php';
 require_once NAVI_PLUGIN_DIR . 'includes/class-navi-sedes.php';
 require_once NAVI_PLUGIN_DIR . 'includes/class-navi-config.php';
+require_once NAVI_PLUGIN_DIR . 'includes/class-navi-contact.php';
 
 // Inicializar clases
-global $navi_database, $navi_plantillas, $navi_sedes, $navi_config;
+global $navi_database, $navi_plantillas, $navi_sedes, $navi_config, $navi_contact;
 $navi_database = new Navi_Database();
 $navi_plantillas = new Navi_Plantillas();
 $navi_sedes = new Navi_Sedes();
 $navi_config = new Navi_Config();
+$navi_contact = new Navi_Contact();
 
 // Activación del plugin
 register_activation_hook(__FILE__, 'navi_activar_plugin');
 
-function navi_activar_plugin() {
+function navi_activar_plugin()
+{
     global $navi_database;
     $navi_database->crear_tablas();
     $navi_database->actualizar_estructura_tablas();
@@ -40,7 +43,8 @@ function navi_activar_plugin() {
 // Manejar actualizaciones
 add_action('plugins_loaded', 'navi_actualizar_plugin');
 
-function navi_actualizar_plugin() {
+function navi_actualizar_plugin()
+{
     global $navi_database;
     $navi_database->actualizar_estructura_tablas();
 }
@@ -66,8 +70,41 @@ function navi_agregar_menu()
 
 function navi_pagina_principal()
 {
-    echo '<div class="wrap"><h1>Bienvenido a Navi</h1></div>';
+    ?>
+    <div class="wrap navi-admin">
+        <h1>Bienvenido a Navi</h1>
+        <div class="navi-card">
+            <h2>Resumen del Plugin</h2>
+            <p>Navi es un plugin para manejar plantillas y sedes, generar filtrado automático con mapas.</p>
+            <p>Utiliza el menú de la izquierda para gestionar plantillas, sedes y configuración.</p>
+        </div>
+        <div class="navi-card">
+            <h2>Instrucciones Rápidas</h2>
+            <ol>
+                <li>Crea una plantilla en la sección "Plantillas".</li>
+                <li>Agrega sedes en la sección "Sedes".</li>
+                <li>Configura la visualización en la sección "Configuración".</li>
+                <li>Usa el shortcode generado para mostrar el filtro de sedes en tus páginas o posts.</li>
+            </ol>
+        </div>
+    </div>
+    <?php
 }
+
+function navi_cargar_plantilla_redireccion()
+{
+    check_ajax_referer('navi_ajax_nonce', 'nonce');
+
+    ob_start();
+    include NAVI_PLUGIN_DIR . 'templates/unlevel-redirection-template.php';
+    $template_content = ob_get_clean();
+
+    echo $template_content;
+    wp_die();
+}
+add_action('wp_ajax_navi_cargar_plantilla_redireccion', 'navi_cargar_plantilla_redireccion');
+add_action('wp_ajax_nopriv_navi_cargar_plantilla_redireccion', 'navi_cargar_plantilla_redireccion');
+
 
 // Cargar scripts y estilos
 function navi_cargar_scripts_frontend()
@@ -102,6 +139,13 @@ add_action('wp_ajax_navi_eliminar_sede', array($GLOBALS['navi_sedes'], 'ajax_eli
 add_action('wp_ajax_navi_obtener_paises', array($GLOBALS['navi_sedes'], 'ajax_obtener_paises'));
 add_action('wp_ajax_navi_obtener_niveles_por_pais', array($GLOBALS['navi_sedes'], 'ajax_obtener_niveles_por_pais'));
 add_action('wp_ajax_navi_actualizar_logo', array($GLOBALS['navi_sedes'], 'ajax_actualizar_logo'));
+add_action('wp_ajax_navi_actualizar_marker', array($GLOBALS['navi_sedes'], 'ajax_actualizar_marker'));
+add_action('wp_ajax_navi_actualizar_fondo', array($GLOBALS['navi_sedes'], 'ajax_actualizar_fondo'));
+add_action('wp_ajax_navi_actualizar_fondo2', array($GLOBALS['navi_sedes'], 'ajax_actualizar_fondo2'));
+add_action('wp_ajax_navi_obtener_sede', array($GLOBALS['navi_sedes'], 'ajax_obtener_sede'));
+add_action('wp_ajax_navi_guardar_cambios_sede', array($GLOBALS['navi_sedes'], 'ajax_guardar_cambios_sede'));
+add_action('wp_ajax_navi_obtener_paises_sin_sedes', array($GLOBALS['navi_config'], 'ajax_obtener_paises_sin_sedes'));
+add_action('wp_ajax_navi_guardar_redirecciones', array($GLOBALS['navi_config'], 'ajax_guardar_redirecciones'));
 
 // Agregar acciones AJAX para usuarios no logueados
 add_action('wp_ajax_nopriv_navi_obtener_plantillas', array($GLOBALS['navi_plantillas'], 'ajax_obtener_plantillas'));
@@ -112,6 +156,7 @@ add_action('wp_ajax_nopriv_navi_obtener_opciones_nivel', array($GLOBALS['navi_se
 add_action('wp_ajax_nopriv_navi_obtener_config', array($GLOBALS['navi_config'], 'ajax_obtener_config'));
 add_action('wp_ajax_nopriv_navi_obtener_paises', array($GLOBALS['navi_sedes'], 'ajax_obtener_paises'));
 add_action('wp_ajax_nopriv_navi_obtener_niveles_por_pais', array($GLOBALS['navi_sedes'], 'ajax_obtener_niveles_por_pais'));
+add_action('wp_ajax_nopriv_navi_obtener_paises_sin_sedes', array($GLOBALS['navi_config'], 'ajax_obtener_paises_sin_sedes'));
 
 // Agregar shortcode
 add_shortcode('navi_filtro_sedes', array($GLOBALS['navi_sedes'], 'shortcode_filtro_sedes'));
@@ -129,6 +174,7 @@ function navi_verificar_base_datos()
 function navi_cargar_scripts_admin($hook)
 {
     if (strpos($hook, 'navi') !== false) {
+        wp_enqueue_style('navi-admin', NAVI_PLUGIN_URL . 'assets/css/navi-admin.css', array(), '1.0');
         wp_enqueue_script('sheetjs', NAVI_PLUGIN_URL . 'libraries/sheetjs/xlsx.full.min.js', array(), '1.0', true);
         wp_enqueue_script('leaflet', NAVI_PLUGIN_URL . 'libraries/leaflet/leaflet.min.js', array(), '1.7.1', true);
         wp_enqueue_style('leaflet', NAVI_PLUGIN_URL . 'libraries/leaflet/leaflet.min.css', array(), '1.7.1');
@@ -151,3 +197,16 @@ function navi_print_loaded_scripts()
     global $wp_scripts;
     echo '<script>console.log("Scripts cargados:", ' . json_encode($wp_scripts->done) . ');</script>';
 }
+
+function navi_enqueue_scripts()
+{
+    wp_enqueue_script('jquery');
+    wp_localize_script('jquery', 'navi_form', [
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('navi-contact-form-nonce')
+    ]);
+}
+add_action('wp_enqueue_scripts', 'navi_enqueue_scripts');
+
+// Inicializar la clase de contacto
+$GLOBALS['navi_contact']->init();

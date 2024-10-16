@@ -9,27 +9,31 @@ class Navi_Plantillas {
 
     public function render_pagina() {
         ?>
-        <div class="wrap">
+        <div class="wrap navi-admin">
             <h1>Gestionar Plantillas</h1>
-            <button id="descargar-plantilla-ejemplo" class="button">Descargar Plantilla de Ejemplo</button>
-            <form id="navi-plantilla-form" enctype="multipart/form-data">
-                <input type="text" name="nombre_plantilla" placeholder="Nombre de la plantilla" required>
-                <input type="file" name="plantilla_excel" accept=".xlsx,.xls" required>
-                <button type="submit" class="button button-primary">Cargar Plantilla</button>
-            </form>
-            <div id="navi-plantilla-mensaje"></div>
-            <h2>Plantillas Cargadas</h2>
-            <table class="wp-list-table widefat fixed striped">
-                <thead>
-                    <tr>
-                        <th>Nombre de la Plantilla</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="navi-plantilla-tabla">
+            <div class="navi-card">
+                <h2>Cargar Nueva Plantilla</h2>
+                <button id="descargar-plantilla-ejemplo" class="navi-button">Descargar Plantilla de Ejemplo</button>
+                <form id="navi-plantilla-form" enctype="multipart/form-data">
+                    <div class="navi-form-group">
+                        <label for="nombre_plantilla">Nombre de la plantilla</label>
+                        <input type="text" id="nombre_plantilla" name="nombre_plantilla" required>
+                    </div>
+                    <div class="navi-form-group">
+                        <label for="plantilla_excel">Archivo Excel</label>
+                        <input type="file" id="plantilla_excel" name="plantilla_excel" accept=".xlsx,.xls" required>
+                    </div>
+                    <button type="submit" class="navi-button navi-button-primary">Cargar Plantilla</button>
+                </form>
+                <div id="navi-plantilla-mensaje"></div>
+            </div>
+            
+            <div class="navi-card">
+                <h2>Plantillas Cargadas</h2>
+                <div id="navi-plantilla-lista" class="navi-list">
                     <!-- Los datos se cargarán aquí dinámicamente -->
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
         <?php
     }
@@ -73,30 +77,36 @@ class Navi_Plantillas {
             $tabla_sedes = $this->db->prefix . 'navi_sedes';
     
             foreach ($datos as $sede) {
-                $resultado_sede = $this->db->insert(
-                    $tabla_sedes,
-                    array(
-                        'plantilla_id' => $plantilla_id,
-                        'nombre' => $sede['Nombre'],
-                        'coordenada' => $sede['Coordenada'] ?? '',
-                        'logo' => $sede['Logo'] ?? '',
-                        'pais' => $sede['País'] ?? '',
-                        'nivel1' => $sede['Nivel 1'] ?? '',
-                        'nivel1_dato' => $sede['Nivel 1 Dato'] ?? '',
-                        'nivel2' => $sede['Nivel 2'] ?? '',
-                        'nivel2_dato' => $sede['Nivel 2 Dato'] ?? '',
-                        'nivel3' => $sede['Nivel 3'] ?? '',
-                        'nivel3_dato' => $sede['Nivel 3 Dato'] ?? '',
-                        'correo' => $sede['Correo'] ?? '',
-                        'telefono' => $sede['Teléfono'] ?? '',
-                        'direccion' => $sede['Dirección'] ?? '',
-                        'pagina_web' => $sede['Página web'] ?? ''
-                    ),
-                    array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
-                );
+                if (isset($sede['País']) && !empty($sede['País'])) {
+                    $resultado_sede = $this->db->insert(
+                        $tabla_sedes,
+                        array(
+                            'plantilla_id' => $plantilla_id,
+                            'pais' => $sede['País'],
+                            'nivel1' => $sede['Nivel 1'] ?? '',
+                            'nivel1_dato' => $sede['Nivel 1 Dato'] ?? '',
+                            'nivel2' => $sede['Nivel 2'] ?? '',
+                            'nivel2_dato' => $sede['Nivel 2 Dato'] ?? '',
+                            'nivel3' => $sede['Nivel 3'] ?? '',
+                            'nivel3_dato' => $sede['Nivel 3 Dato'] ?? '',
+                            'nombre' => $sede['Nombre'] ?? '',
+                            'direccion' => $sede['Dirección'] ?? '',
+                            'coordenada' => $sede['Coordenada'] ?? '',
+                            'horario' => $sede['Horario'] ?? '',
+                            'pagina_web' => $sede['Página web'] ?? '',
+                            'correo' => $sede['Correo'] ?? '',
+                            'telefono' => $sede['Teléfono'] ?? '',
+                            'logo' => $sede['Logo'] ?? '',
+                            'marker' => $sede['Marker'] ?? '',
+                            'fondo' => $sede['Fondo'] ?? '',
+                            'fondo2' => $sede['Fondo 2'] ?? ''
+                        ),
+                        array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+                    );
     
-                if (!$resultado_sede) {
-                    throw new Exception('Error al insertar una sede: ' . $this->db->last_error);
+                    if (!$resultado_sede) {
+                        throw new Exception('Error al insertar una sede: ' . $this->db->last_error);
+                    }
                 }
             }
     
@@ -171,7 +181,7 @@ class Navi_Plantillas {
         ), ARRAY_A);
 
         $datos_excel = array(
-            array('Nombre', 'Coordenada', 'Logo', 'País', 'Nivel 1', 'Nivel 2', 'Nivel 3', 'Correo', 'Teléfono', 'Dirección', 'Página web')
+            array('Nombre', 'Coordenada', 'Logo', 'Marker', 'Fondo', 'Fondo2', 'País', 'Nivel 1', 'Nivel 2', 'Nivel 3', 'Correo', 'Teléfono', 'Dirección', 'Horario', 'Página web')
         );
 
         foreach ($sedes as $sede) {
@@ -179,6 +189,9 @@ class Navi_Plantillas {
                 $sede['nombre'],
                 $sede['coordenada'],
                 $sede['logo'],
+                $sede['marker'],
+                $sede['fondo'],
+                $sede['fondo2'],
                 $sede['prefijo_pais'],
                 $sede['nivel1_dato'],
                 $sede['nivel2_dato'],
@@ -186,6 +199,7 @@ class Navi_Plantillas {
                 $sede['correo'],
                 $sede['telefono'],
                 $sede['direccion'],
+                $sede['horario'],
                 $sede['pagina_web']
             );
         }

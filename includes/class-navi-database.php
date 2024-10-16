@@ -14,46 +14,61 @@ class Navi_Database
         $charset_collate = $this->wpdb->get_charset_collate();
 
         $sql_plantillas = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_plantillas (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            nombre varchar(100) NOT NULL,
-            datos longtext NOT NULL,
-            PRIMARY KEY (id)
-        ) $charset_collate;";
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        nombre varchar(100) NOT NULL,
+        datos longtext NOT NULL,
+        PRIMARY KEY (id)
+    ) $charset_collate;";
 
         $sql_sedes = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_sedes (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            plantilla_id mediumint(9) NOT NULL,
-            nombre varchar(100) NOT NULL,
-            coordenada varchar(50) NOT NULL,
-            logo varchar(255) DEFAULT '',
-            pais varchar(100) NOT NULL,
-            nivel1 varchar(100) NOT NULL,
-            nivel1_dato varchar(100) NOT NULL,
-            nivel2 varchar(100) DEFAULT '',
-            nivel2_dato varchar(100) DEFAULT '',
-            nivel3 varchar(100) DEFAULT '',
-            nivel3_dato varchar(100) DEFAULT '',
-            correo varchar(100) NOT NULL,
-            telefono varchar(20) NOT NULL,
-            direccion text NOT NULL,
-            pagina_web varchar(255) DEFAULT '',
-            PRIMARY KEY (id),
-            FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
-        ) $charset_collate;";
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        plantilla_id mediumint(9) NOT NULL,
+        nombre varchar(100) NOT NULL,
+        coordenada varchar(50) NOT NULL,
+        logo varchar(255) DEFAULT '',
+        marker varchar(255) DEFAULT '',
+        fondo varchar(255) DEFAULT '',
+        fondo2 varchar(255) DEFAULT '',
+        pais varchar(100) NOT NULL,
+        nivel1 varchar(100) NOT NULL,
+        nivel1_dato varchar(100) NOT NULL,
+        nivel2 varchar(100) DEFAULT '',
+        nivel2_dato varchar(100) DEFAULT '',
+        nivel3 varchar(100) DEFAULT '',
+        nivel3_dato varchar(100) DEFAULT '',
+        correo varchar(100) NOT NULL,
+        telefono varchar(20) NOT NULL,
+        direccion text NOT NULL,
+        horario text NOT NULL,
+        pagina_web varchar(255) DEFAULT '',
+        PRIMARY KEY (id),
+        FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
+    ) $charset_collate;";
 
         $sql_config = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_config (
-            id mediumint(9) NOT NULL AUTO_INCREMENT,
-            plantilla_id mediumint(9) NOT NULL,
-            campos_mostrar text NOT NULL,
-            mostrar_mapa tinyint(1) NOT NULL DEFAULT 0,
-            PRIMARY KEY (id),
-            FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
-        ) $charset_collate;";
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        plantilla_id mediumint(9) NOT NULL,
+        campos_mostrar text NOT NULL,
+        mostrar_mapa tinyint(1) NOT NULL DEFAULT 0,
+        mostrar_formulario tinyint(1) NOT NULL DEFAULT 0,
+        PRIMARY KEY (id),
+        FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
+    ) $charset_collate;";
+
+        $sql_redirecciones = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_redirecciones (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        plantilla_id mediumint(9) NOT NULL,
+        pais varchar(100) NOT NULL,
+        url_redireccion varchar(255) NOT NULL,
+        PRIMARY KEY (id),
+        FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
+    ) $charset_collate;";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_plantillas);
         dbDelta($sql_sedes);
         dbDelta($sql_config);
+        dbDelta($sql_redirecciones);
 
         error_log('Tablas de Navi creadas o actualizadas');
     }
@@ -81,6 +96,9 @@ class Navi_Database
                         'nombre' => $sede['Nombre'] ?? '',
                         'coordenada' => $sede['Coordenada'] ?? '',
                         'logo' => $sede['Logo'] ?? '',
+                        'marker' => $sede['Marker'] ?? '',
+                        'fondo' => $sede['Fondo'] ?? '',
+                        'fondo2' => $sede['Fondo2'] ?? '',
                         'pais' => $sede['País'] ?? '',
                         'nivel1' => $sede['Nivel 1'] ?? '',
                         'nivel1_dato' => $sede['Nivel 1 Dato'] ?? '',
@@ -91,9 +109,10 @@ class Navi_Database
                         'correo' => $sede['Correo'] ?? '',
                         'telefono' => $sede['Teléfono'] ?? '',
                         'direccion' => $sede['Dirección'] ?? '',
+                        'horario' => $sede['Horario'] ?? '',
                         'pagina_web' => $sede['Página web'] ?? ''
                     ),
-                    array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+                    array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
                 );
             }
         }
@@ -123,20 +142,56 @@ class Navi_Database
 
     public function actualizar_estructura_tablas()
     {
-        $tabla_config = $this->wpdb->prefix . 'navi_config';
-        $columna = 'custom_render_function';
+        $charset_collate = $this->wpdb->get_charset_collate();
 
-        // Verificar si la columna existe
-        $columna_existe = $this->wpdb->get_results("SHOW COLUMNS FROM `$tabla_config` LIKE '$columna'");
+        $sql_plantillas = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_plantillas (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        nombre varchar(100) NOT NULL,
+        datos longtext NOT NULL,
+        PRIMARY KEY (id)
+    ) $charset_collate;";
 
-        if (!empty($columna_existe)) {
-            // La columna existe, así que la eliminamos
-            $this->wpdb->query("ALTER TABLE `$tabla_config` DROP COLUMN `$columna`");
-            error_log("Columna '$columna' eliminada de la tabla '$tabla_config'");
-        }
+        $sql_sedes = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_sedes (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        plantilla_id mediumint(9) NOT NULL,
+        nombre varchar(100) NOT NULL,
+        coordenada varchar(50) NOT NULL,
+        logo varchar(255) DEFAULT '',
+        marker varchar(255) DEFAULT '',
+        fondo varchar(255) DEFAULT '',
+        fondo2 varchar(255) DEFAULT '',
+        pais varchar(100) NOT NULL,
+        nivel1 varchar(100) NOT NULL,
+        nivel1_dato varchar(100) NOT NULL,
+        nivel2 varchar(100) DEFAULT '',
+        nivel2_dato varchar(100) DEFAULT '',
+        nivel3 varchar(100) DEFAULT '',
+        nivel3_dato varchar(100) DEFAULT '',
+        correo varchar(100) NOT NULL,
+        telefono varchar(20) NOT NULL,
+        direccion text NOT NULL,
+        horario text NOT NULL,
+        pagina_web varchar(255) DEFAULT '',
+        PRIMARY KEY (id),
+        FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
+    ) $charset_collate;";
 
-        // Llamar a crear_tablas para asegurar que todas las tablas estén actualizadas
-        $this->crear_tablas();
+        $sql_config = "CREATE TABLE IF NOT EXISTS {$this->wpdb->prefix}navi_config (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        plantilla_id mediumint(9) NOT NULL,
+        campos_mostrar text NOT NULL,
+        mostrar_mapa tinyint(1) NOT NULL DEFAULT 0,
+        mostrar_formulario tinyint(1) NOT NULL DEFAULT 0,
+        PRIMARY KEY (id),
+        FOREIGN KEY (plantilla_id) REFERENCES {$this->wpdb->prefix}navi_plantillas(id) ON DELETE CASCADE
+    ) $charset_collate;";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql_plantillas);
+        dbDelta($sql_sedes);
+        dbDelta($sql_config);
+
+        error_log('Tablas de Navi actualizadas');
     }
 
     public function migrar_datos_antiguos()
@@ -157,6 +212,9 @@ class Navi_Database
                         'Nombre' => $dato['nombre'] ?? '',
                         'Coordenada' => $dato['coordenada'] ?? '',
                         'Logo' => $dato['logo'] ?? '',
+                        'Marker' => $dato['marker'] ?? '',
+                        'Fondo' => $dato['fondo'] ?? '',
+                        'Fondo2' => $dato['fondo2'] ?? '',
                         'País' => $dato['prefijo_pais'] ?? '',
                         'Nivel 1' => $plantilla['nivel1'],
                         'Nivel 2' => $plantilla['nivel2'],
@@ -164,6 +222,7 @@ class Navi_Database
                         'Correo' => $dato['correo'] ?? '',
                         'Teléfono' => $dato['telefono'] ?? '',
                         'Dirección' => $dato['direccion'] ?? '',
+                        'Horario' => $dato['horario'] ?? '',
                         'Página web' => $dato['pagina_web'] ?? ''
                     );
                 }
