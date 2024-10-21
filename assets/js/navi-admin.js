@@ -4,6 +4,44 @@
         cargarPlantillas();
         cargarSedes();
 
+
+        // Añade estos manejadores de eventos después de tu código existente
+        $(document).on('click', '.editar-nombre-plantilla', function () {
+            var plantillaId = $(this).data('id');
+            var nombreSpan = $(this).siblings('.navi-plantilla-nombre');
+            var nombreActual = nombreSpan.text();
+
+            nombreSpan.html('<input type="text" class="editar-nombre-input" value="' + nombreActual + '">');
+            $(this).text('Guardar').removeClass('editar-nombre-plantilla').addClass('guardar-nombre-plantilla');
+        });
+
+        $(document).on('click', '.guardar-nombre-plantilla', function () {
+            var plantillaId = $(this).data('id');
+            var input = $(this).siblings('.navi-plantilla-nombre').find('input');
+            var nuevoNombre = input.val().trim();
+
+            if (nuevoNombre) {
+                guardarNombrePlantilla(plantillaId, nuevoNombre, $(this));
+            } else {
+                alert('El nombre de la plantilla no puede estar vacío.');
+            }
+        });
+
+        // Añade un manejador de eventos para el botón de reemplazar
+        $(document).on('click', '.reemplazar-plantilla', function () {
+            var plantilla_id = $(this).data('id');
+            var input = $('<input type="file" accept=".xlsx,.xls">');
+
+            input.on('change', function (e) {
+                var file = e.target.files[0];
+                if (file) {
+                    reemplazarPlantilla(plantilla_id, file);
+                }
+            });
+
+            input.click();
+        });
+
         // Manejar el formulario de plantillas
         $('#navi-plantilla-form').on('submit', manejarSubmitPlantilla);
 
@@ -38,7 +76,7 @@
         // Vista previa del fondo
         $('#fondo').on('change', mostrarVistaPrevia);
         $('#fondo2').on('change', mostrarVistaPrevia);
-        
+
 
         // Manejar el formulario de configuración
         $('#navi-config-form').on('submit', function (e) {
@@ -63,7 +101,7 @@
         });
 
         // Redirecciones
-        $('#plantilla_id_redireccion').on('change', function() {
+        $('#plantilla_id_redireccion').on('change', function () {
             var plantilla_id = $(this).val();
             console.log('Plantilla seleccionada:', plantilla_id);
             if (plantilla_id) {
@@ -73,11 +111,51 @@
             }
         });
 
-        $('#navi-redirecciones-form').on('submit', function(e) {
+        $('#navi-redirecciones-form').on('submit', function (e) {
             e.preventDefault();
             guardarRedirecciones();
         });
     });
+
+    // Función para reemplazar la plantilla
+    function reemplazarPlantilla(plantilla_id, file) {
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+            var data = new Uint8Array(e.target.result);
+            var workbook = XLSX.read(data, { type: 'array' });
+            var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            var jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+            // Procesar y validar los datos
+            var processedData = processExcelData(jsonData);
+
+            // Enviar los datos al servidor para reemplazar la plantilla existente
+            $.ajax({
+                url: navi_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'navi_reemplazar_plantilla',
+                    nonce: navi_ajax.nonce,
+                    plantilla_id: plantilla_id,
+                    datos: JSON.stringify(processedData)
+                },
+                success: function (response) {
+                    if (response.success) {
+                        alert('Plantilla reemplazada con éxito');
+                        cargarPlantillas(); // Recargar la lista de plantillas
+                    } else {
+                        alert('Error al reemplazar la plantilla: ' + response.data);
+                    }
+                },
+                error: function () {
+                    alert('Error de conexión al reemplazar la plantilla');
+                }
+            });
+        };
+
+        reader.readAsArrayBuffer(file);
+    }
 
     function cargarPaisesSinSedes(plantilla_id) {
         console.log('Iniciando carga de países sin sedes para plantilla:', plantilla_id);
@@ -89,7 +167,7 @@
                 nonce: navi_ajax.nonce,
                 plantilla_id: plantilla_id
             },
-            success: function(response) {
+            success: function (response) {
                 console.log('Respuesta recibida:', response);
                 if (response.success) {
                     var paises = response.data.paises;
@@ -98,11 +176,11 @@
                     console.log('Redirecciones:', redirecciones);
                     var container = $('#redirecciones-container');
                     container.empty();
-    
+
                     if (paises.length === 0) {
                         container.append('<p>No hay países sin sedes para esta plantilla.</p>');
                     } else {
-                        paises.forEach(function(pais) {
+                        paises.forEach(function (pais) {
                             var redireccion = redirecciones[pais] || '';
                             container.append(
                                 '<div class="navi-form-group">' +
@@ -118,7 +196,7 @@
                     $('#redirecciones-container').html('<p>Error al cargar países sin sedes: ' + response.data + '</p>');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('Error AJAX al cargar países sin sedes:', status, error);
                 console.log('Respuesta completa:', xhr.responseText);
                 $('#redirecciones-container').html('<p>Error al cargar países sin sedes. Por favor, intenta de nuevo.</p>');
@@ -130,7 +208,7 @@
         var plantilla_id = $('#plantilla_id_redireccion').val();
         var redirecciones = {};
 
-        $('#redirecciones-container input').each(function() {
+        $('#redirecciones-container input').each(function () {
             var pais = $(this).attr('name').replace('redireccion[', '').replace(']', '');
             var url = $(this).val();
             if (url) {
@@ -147,14 +225,14 @@
                 plantilla_id: plantilla_id,
                 redirecciones: JSON.stringify(redirecciones)
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     $('#navi-redirecciones-mensaje').html('<p class="success">' + response.data + '</p>');
                 } else {
                     $('#navi-redirecciones-mensaje').html('<p class="error">' + response.data + '</p>');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('Error AJAX al guardar redirecciones:', status, error);
                 $('#navi-redirecciones-mensaje').html('<p class="error">Error al guardar las redirecciones. Por favor, intenta de nuevo.</p>');
             }
@@ -250,35 +328,35 @@
     function processExcelData(data) {
         var headers = data[0];
         var processedData = [];
-    
+
         for (var i = 1; i < data.length; i++) {
             var row = data[i];
-    
+
             // Verificar si la fila está vacía
             if (row.every(cell => !cell)) continue;
-    
+
             var item = {};
             var isValid = true;
-    
+
             for (var j = 0; j < headers.length; j++) {
                 var header = headers[j];
                 var value = row[j] || '';
-    
+
                 // Asegurarse de que al menos el país esté presente
                 if (header === 'País' && !value) {
                     isValid = false;
                     console.error('Fila ' + (i + 1) + ': El país no puede estar vacío');
                     break;
                 }
-    
+
                 item[header] = value;
             }
-    
+
             if (isValid) {
                 processedData.push(item);
             }
         }
-    
+
         return processedData;
     }
 
@@ -360,14 +438,27 @@
                     var plantillas = response.data;
                     var listaPlantillas = $('#navi-plantilla-lista');
                     listaPlantillas.empty();
-
+    
                     plantillas.forEach(function (plantilla) {
                         var item = $('<div class="navi-list-item"></div>');
-                        item.append('<span class="navi-plantilla-nombre">' + plantilla.nombre + '</span>');
-                        item.append('<button class="navi-button navi-button-danger eliminar-plantilla" data-id="' + plantilla.id + '">Eliminar</button>');
+                        item.append('<span class="navi-plantilla-nombre" data-id="' + plantilla.id + '">' + plantilla.nombre + '</span>');
+                    
+                        // Crear el contenedor de botones
+                        var buttonContainer = $('<div class="container-btns" style="display: flex; gap: 0.5rem"></div>');
+                    
+                        // Añadir los botones dentro del contenedor
+                        buttonContainer.append('<button class="navi-button navi-button-secondary editar-nombre-plantilla" data-id="' + plantilla.id + '">Editar Nombre</button>');
+                        buttonContainer.append('<button class="navi-button navi-button-secondary reemplazar-plantilla" data-id="' + plantilla.id + '">Reemplazar</button>');
+                        buttonContainer.append('<button class="navi-button navi-button-danger eliminar-plantilla" data-id="' + plantilla.id + '">Eliminar</button>');
+                    
+                        // Añadir el contenedor de botones al item
+                        item.append(buttonContainer);
+                    
+                        // Añadir el item a la lista de plantillas
                         listaPlantillas.append(item);
                     });
-
+                    
+    
                     actualizarSelectsPlantillas(plantillas);
                 } else {
                     console.error('Error al cargar plantillas:', response.data);
@@ -379,11 +470,50 @@
         });
     }
 
-    function actualizarSelectsPlantillas(plantillas) {
-        var selects = $('#plantilla_id, #config-plantilla_id');
-        selects.empty().append('<option value="">Seleccione una plantilla</option>');
-        plantillas.forEach(function (plantilla) {
-            selects.append('<option value="' + plantilla.id + '">' + plantilla.nombre + '</option>');
+    function guardarNombrePlantilla(plantillaId, nuevoNombre, boton) {
+        $.ajax({
+            url: navi_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'navi_editar_nombre_plantilla',
+                nonce: navi_ajax.nonce,
+                plantilla_id: plantillaId,
+                nuevo_nombre: nuevoNombre
+            },
+            success: function (response) {
+                if (response.success) {
+                    var nombreSpan = boton.siblings('.navi-plantilla-nombre');
+                    nombreSpan.text(nuevoNombre);
+                    boton.text('Editar Nombre').removeClass('guardar-nombre-plantilla').addClass('editar-nombre-plantilla');
+                    actualizarSelectsPlantillas();
+                } else {
+                    alert('Error al guardar el nuevo nombre: ' + response.data);
+                }
+            },
+            error: function () {
+                alert('Error de conexión al guardar el nuevo nombre');
+            }
+        });
+    }
+
+    function actualizarSelectsPlantillas() {
+        $.ajax({
+            url: navi_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'navi_obtener_plantillas',
+                nonce: navi_ajax.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    var plantillas = response.data;
+                    var selects = $('#plantilla_id, #config-plantilla_id');
+                    selects.empty().append('<option value="">Seleccione una plantilla</option>');
+                    plantillas.forEach(function (plantilla) {
+                        selects.append('<option value="' + plantilla.id + '">' + plantilla.nombre + '</option>');
+                    });
+                }
+            }
         });
     }
 
@@ -616,37 +746,37 @@
         });
     }
 
-     function subirLogo(sedeId, file) {
-         var formData = new FormData();
-         formData.append('action', 'navi_actualizar_logo');
-         formData.append('nonce', navi_ajax.nonce);
-         formData.append('sede_id', sedeId);
-         formData.append('logo', file);
+    function subirLogo(sedeId, file) {
+        var formData = new FormData();
+        formData.append('action', 'navi_actualizar_logo');
+        formData.append('nonce', navi_ajax.nonce);
+        formData.append('sede_id', sedeId);
+        formData.append('logo', file);
 
-         $.ajax({
-             url: navi_ajax.ajax_url,
-             type: 'POST',
-             data: formData,
-             processData: false,
-             contentType: false,
-             success: function (response) {
-                 if (response.success) {
-                     alert(response.data.message);
-                     // Actualizar la imagen del logo en la tabla
-                     $('input.logo-upload[data-sede-id="' + sedeId + '"]')
-                         .siblings('img')
-                         .attr('src', response.data.logo_url);
-                 } else {
-                     alert('Error: ' + response.data);
-                 }
-             },
-             error: function () {
-                 alert('Error al subir el logo. Por favor, inténtalo de nuevo.');
-             }
-         });
-     }
+        $.ajax({
+            url: navi_ajax.ajax_url,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    // Actualizar la imagen del logo en la tabla
+                    $('input.logo-upload[data-sede-id="' + sedeId + '"]')
+                        .siblings('img')
+                        .attr('src', response.data.logo_url);
+                } else {
+                    alert('Error: ' + response.data);
+                }
+            },
+            error: function () {
+                alert('Error al subir el logo. Por favor, inténtalo de nuevo.');
+            }
+        });
+    }
 
-     function subirMarker(sedeId, file) {
+    function subirMarker(sedeId, file) {
         var formData = new FormData();
         formData.append('action', 'navi_actualizar_marker');
         formData.append('nonce', navi_ajax.nonce);
@@ -676,37 +806,37 @@
         });
     }
 
-     function subirFondo(sedeId, file) {
-         var formData = new FormData();
-         formData.append('action', 'navi_actualizar_fondo');
-         formData.append('nonce', navi_ajax.nonce);
-         formData.append('sede_id', sedeId);
-         formData.append('fondo', file);
+    function subirFondo(sedeId, file) {
+        var formData = new FormData();
+        formData.append('action', 'navi_actualizar_fondo');
+        formData.append('nonce', navi_ajax.nonce);
+        formData.append('sede_id', sedeId);
+        formData.append('fondo', file);
 
-         $.ajax({
-             url: navi_ajax.ajax_url,
-             type: 'POST',
-             data: formData,
-             processData: false,
-             contentType: false,
-             success: function (response) {
-                 if (response.success) {
-                     alert(response.data.message);
-                     // Actualizar la imagen del fondo en la tabla
-                     $('input.fondo-upload[data-sede-id="' + sedeId + '"]')
-                         .siblings('img')
-                         .attr('src', response.data.fondo_url);
-                 } else {
-                     alert('Error: ' + response.data);
-                 }
-             },
-             error: function () {
-                 alert('Error al subir el fondo. Por favor, inténtalo de nuevo.');
-             }
-         });
-     }
+        $.ajax({
+            url: navi_ajax.ajax_url,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    // Actualizar la imagen del fondo en la tabla
+                    $('input.fondo-upload[data-sede-id="' + sedeId + '"]')
+                        .siblings('img')
+                        .attr('src', response.data.fondo_url);
+                } else {
+                    alert('Error: ' + response.data);
+                }
+            },
+            error: function () {
+                alert('Error al subir el fondo. Por favor, inténtalo de nuevo.');
+            }
+        });
+    }
 
-     function subirFondo2(sedeId, file) {
+    function subirFondo2(sedeId, file) {
         var formData = new FormData();
         formData.append('action', 'navi_actualizar_fondo2');
         formData.append('nonce', navi_ajax.nonce);
@@ -909,9 +1039,9 @@
                     var config = response.data;
                     var camposMostrar = $('#campos-mostrar');
                     camposMostrar.empty();
-    
+
                     var camposDisponibles = config.campos_disponibles;
-    
+
                     Object.keys(camposDisponibles).forEach(function (campo) {
                         var checked = config.campos_mostrar.includes(campo) ? 'checked' : '';
                         camposMostrar.append(
@@ -924,7 +1054,7 @@
                             '</div>'
                         );
                     });
-    
+
                     // Actualizar el switch de mostrar mapa
                     $('#mostrar-mapa-container').html(
                         '<div class="navi-config-item">' +
@@ -935,7 +1065,7 @@
                         '<label for="mostrar_mapa">Mostrar mapa</label>' +
                         '</div>'
                     );
-    
+
                     // Actualizar el switch de mostrar formulario
                     $('#mostrar-formulario-container').html(
                         '<div class="navi-config-item">' +
@@ -946,52 +1076,52 @@
                         '<label for="mostrar_formulario">Mostrar formulario de contacto</label>' +
                         '</div>'
                     );
-    
+
                     $('#campos-mostrar-container, #mostrar-mapa-container, #mostrar-formulario-container').show();
                 } else {
                     console.error('Error al cargar la configuración:', response.data);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Error AJAX al cargar la configuración:', status, error);
+                console.log('Respuesta del servidor:', xhr.responseText);
             }
-        },
-        error: function (xhr, status, error) {
-            console.error('Error AJAX al cargar la configuración:', status, error);
-            console.log('Respuesta del servidor:', xhr.responseText);
-        }
-    });
-}
+        });
+    }
 
-function guardarConfig() {
-    var plantilla_id = $('#plantilla_id').val();
-    var campos_mostrar = $('input[name="campos_mostrar[]"]:checked').map(function () {
-        return this.value;
-    }).get();
-    var mostrar_mapa = $('#mostrar_mapa').is(':checked') ? 1 : 0;
-    var mostrar_formulario = $('#mostrar_formulario').is(':checked') ? 1 : 0;
+    function guardarConfig() {
+        var plantilla_id = $('#plantilla_id').val();
+        var campos_mostrar = $('input[name="campos_mostrar[]"]:checked').map(function () {
+            return this.value;
+        }).get();
+        var mostrar_mapa = $('#mostrar_mapa').is(':checked') ? 1 : 0;
+        var mostrar_formulario = $('#mostrar_formulario').is(':checked') ? 1 : 0;
 
-    $.ajax({
-        url: navi_ajax.ajax_url,
-        type: 'POST',
-        data: {
-            action: 'navi_guardar_config',
-            nonce: navi_ajax.nonce,
-            plantilla_id: plantilla_id,
-            campos_mostrar: JSON.stringify(campos_mostrar),
-            mostrar_mapa: mostrar_mapa,
-            mostrar_formulario: mostrar_formulario
-        },
-        success: function (response) {
-            if (response.success) {
-                $('#navi-config-mensaje').html('<p class="success">' + response.data.mensaje + '</p>');
-                $('#navi-shortcode').html('<p>Shortcode: <code>' + response.data.shortcode + '</code></p>');
-            } else {
-                $('#navi-config-mensaje').html('<p class="error">' + response.data + '</p>');
+        $.ajax({
+            url: navi_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'navi_guardar_config',
+                nonce: navi_ajax.nonce,
+                plantilla_id: plantilla_id,
+                campos_mostrar: JSON.stringify(campos_mostrar),
+                mostrar_mapa: mostrar_mapa,
+                mostrar_formulario: mostrar_formulario
+            },
+            success: function (response) {
+                if (response.success) {
+                    $('#navi-config-mensaje').html('<p class="success">' + response.data.mensaje + '</p>');
+                    $('#navi-shortcode').html('<p>Shortcode: <code>' + response.data.shortcode + '</code></p>');
+                } else {
+                    $('#navi-config-mensaje').html('<p class="error">' + response.data + '</p>');
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Error al guardar la configuración:', error);
+                $('#navi-config-mensaje').html('<p class="error">Error al guardar la configuración. Por favor, intenta de nuevo.</p>');
             }
-        },
-        error: function (xhr, status, error) {
-            console.error('Error al guardar la configuración:', error);
-            $('#navi-config-mensaje').html('<p class="error">Error al guardar la configuración. Por favor, intenta de nuevo.</p>');
-        }
-    });
-}
+        });
+    }
 
     function eliminarPlantilla(plantilla_id) {
         $.ajax({

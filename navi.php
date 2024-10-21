@@ -146,6 +146,8 @@ add_action('wp_ajax_navi_obtener_sede', array($GLOBALS['navi_sedes'], 'ajax_obte
 add_action('wp_ajax_navi_guardar_cambios_sede', array($GLOBALS['navi_sedes'], 'ajax_guardar_cambios_sede'));
 add_action('wp_ajax_navi_obtener_paises_sin_sedes', array($GLOBALS['navi_config'], 'ajax_obtener_paises_sin_sedes'));
 add_action('wp_ajax_navi_guardar_redirecciones', array($GLOBALS['navi_config'], 'ajax_guardar_redirecciones'));
+add_action('wp_ajax_navi_reemplazar_plantilla', array($GLOBALS['navi_plantillas'], 'ajax_reemplazar_plantilla'));
+add_action('wp_ajax_navi_editar_nombre_plantilla', array($GLOBALS['navi_plantillas'], 'ajax_editar_nombre_plantilla'));
 
 // Agregar acciones AJAX para usuarios no logueados
 add_action('wp_ajax_nopriv_navi_obtener_plantillas', array($GLOBALS['navi_plantillas'], 'ajax_obtener_plantillas'));

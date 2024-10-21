@@ -38,6 +38,122 @@ class Navi_Plantillas {
         <?php
     }
 
+    public function ajax_reemplazar_plantilla() {
+        check_ajax_referer('navi_ajax_nonce', 'nonce');
+    
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('No tienes permisos para realizar esta acción.');
+        }
+    
+        if (!isset($_POST['plantilla_id']) || !isset($_POST['datos'])) {
+            wp_send_json_error('No se han recibido datos suficientes.');
+        }
+    
+        $plantilla_id = intval($_POST['plantilla_id']);
+        $datos = json_decode(stripslashes($_POST['datos']), true);
+    
+        if (empty($datos)) {
+            wp_send_json_error('Los datos recibidos no son válidos.');
+        }
+    
+        $this->db->query('START TRANSACTION');
+    
+        try {
+            // Actualizar los datos de la plantilla
+            $resultado_plantilla = $this->db->update(
+                $this->db->prefix . 'navi_plantillas',
+                array('datos' => json_encode($datos)),
+                array('id' => $plantilla_id),
+                array('%s'),
+                array('%d')
+            );
+    
+            if ($resultado_plantilla === false) {
+                throw new Exception('No se pudo actualizar la plantilla: ' . $this->db->last_error);
+            }
+    
+            // Eliminar las sedes existentes para esta plantilla
+            $this->db->delete($this->db->prefix . 'navi_sedes', array('plantilla_id' => $plantilla_id), array('%d'));
+    
+            // Insertar las nuevas sedes
+            $tabla_sedes = $this->db->prefix . 'navi_sedes';
+            foreach ($datos as $sede) {
+                if (isset($sede['País']) && !empty($sede['País'])) {
+                    $resultado_sede = $this->db->insert(
+                        $tabla_sedes,
+                        array(
+                            'plantilla_id' => $plantilla_id,
+                            'pais' => $sede['País'],
+                            'nivel1' => $sede['Nivel 1'] ?? '',
+                            'nivel1_dato' => $sede['Nivel 1 Dato'] ?? '',
+                            'nivel2' => $sede['Nivel 2'] ?? '',
+                            'nivel2_dato' => $sede['Nivel 2 Dato'] ?? '',
+                            'nivel3' => $sede['Nivel 3'] ?? '',
+                            'nivel3_dato' => $sede['Nivel 3 Dato'] ?? '',
+                            'nombre' => $sede['Nombre'] ?? '',
+                            'direccion' => $sede['Dirección'] ?? '',
+                            'coordenada' => $sede['Coordenada'] ?? '',
+                            'horario' => $sede['Horario'] ?? '',
+                            'pagina_web' => $sede['Página web'] ?? '',
+                            'correo' => $sede['Correo'] ?? '',
+                            'telefono' => $sede['Teléfono'] ?? '',
+                            'logo' => $sede['Logo'] ?? '',
+                            'marker' => $sede['Marker'] ?? '',
+                            'fondo' => $sede['Fondo'] ?? '',
+                            'fondo2' => $sede['Fondo 2'] ?? ''
+                        ),
+                        array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
+                    );
+    
+                    if ($resultado_sede === false) {
+                        throw new Exception('Error al insertar una sede: ' . $this->db->last_error);
+                    }
+                }
+            }
+    
+            $this->db->query('COMMIT');
+            wp_send_json_success('Plantilla reemplazada con éxito.');
+    
+        } catch (Exception $e) {
+            $this->db->query('ROLLBACK');
+            wp_send_json_error($e->getMessage());
+        }
+    }
+
+    public function ajax_editar_nombre_plantilla() {
+        check_ajax_referer('navi_ajax_nonce', 'nonce');
+    
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('No tienes permisos para realizar esta acción.');
+        }
+    
+        if (!isset($_POST['plantilla_id']) || !isset($_POST['nuevo_nombre'])) {
+            wp_send_json_error('No se han recibido datos suficientes.');
+        }
+    
+        $plantilla_id = intval($_POST['plantilla_id']);
+        $nuevo_nombre = sanitize_text_field($_POST['nuevo_nombre']);
+    
+        if (empty($nuevo_nombre)) {
+            wp_send_json_error('El nombre de la plantilla no puede estar vacío.');
+        }
+    
+        $resultado = $this->db->update(
+            $this->db->prefix . 'navi_plantillas',
+            array('nombre' => $nuevo_nombre),
+            array('id' => $plantilla_id),
+            array('%s'),
+            array('%d')
+        );
+    
+        if ($resultado !== false) {
+            wp_send_json_success('Nombre de la plantilla actualizado con éxito.');
+        } else {
+            wp_send_json_error('Error al actualizar el nombre de la plantilla.');
+        }
+    }
+
+
     public function ajax_cargar_plantilla() {
         check_ajax_referer('navi_ajax_nonce', 'nonce');
     
