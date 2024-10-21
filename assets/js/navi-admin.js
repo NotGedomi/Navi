@@ -5,26 +5,49 @@
         cargarSedes();
 
 
-        // Añade estos manejadores de eventos después de tu código existente
-        $(document).on('click', '.editar-nombre-plantilla', function () {
+        // Actualiza los manejadores de eventos para la edición del nombre
+        $(document).on('click', '.editar-nombre-plantilla', function (e) {
+            e.preventDefault();
             var plantillaId = $(this).data('id');
-            var nombreSpan = $(this).siblings('.navi-plantilla-nombre');
-            var nombreActual = nombreSpan.text();
+            var nombreContainer = $(this).closest('.navi-list-item').find('.nombre-container');
+            var nombreSpan = nombreContainer.find('.navi-plantilla-nombre');
+            var nombreActual = nombreSpan.text().trim();
 
-            nombreSpan.html('<input type="text" class="editar-nombre-input" value="' + nombreActual + '">');
-            $(this).text('Guardar').removeClass('editar-nombre-plantilla').addClass('guardar-nombre-plantilla');
+            // Solo crear el input si no existe ya
+            if (!nombreContainer.find('.editar-nombre-input').length) {
+                nombreSpan.hide();
+                nombreContainer.append(
+                    '<input type="text" class="editar-nombre-input" value="' + nombreActual + '">' +
+                    '<button class="navi-button navi-button-primary guardar-nombre-plantilla" data-id="' + plantillaId + '">Guardar</button>' +
+                    '<button class="navi-button navi-button-secondary cancelar-edicion-nombre">Cancelar</button>'
+                );
+            }
         });
 
-        $(document).on('click', '.guardar-nombre-plantilla', function () {
+        // Manejador para guardar el nombre
+        $(document).on('click', '.guardar-nombre-plantilla', function (e) {
+            e.preventDefault();
             var plantillaId = $(this).data('id');
-            var input = $(this).siblings('.navi-plantilla-nombre').find('input');
+            var nombreContainer = $(this).closest('.nombre-container');
+            var input = nombreContainer.find('.editar-nombre-input');
             var nuevoNombre = input.val().trim();
 
             if (nuevoNombre) {
-                guardarNombrePlantilla(plantillaId, nuevoNombre, $(this));
+                guardarNombrePlantilla(plantillaId, nuevoNombre, nombreContainer);
             } else {
                 alert('El nombre de la plantilla no puede estar vacío.');
             }
+        });
+
+        // Manejador para cancelar la edición
+        $(document).on('click', '.cancelar-edicion-nombre', function (e) {
+            e.preventDefault();
+            var nombreContainer = $(this).closest('.nombre-container');
+            var nombreSpan = nombreContainer.find('.navi-plantilla-nombre');
+
+            // Remover los elementos de edición
+            nombreContainer.find('.editar-nombre-input, .guardar-nombre-plantilla, .cancelar-edicion-nombre').remove();
+            nombreSpan.show();
         });
 
         // Añade un manejador de eventos para el botón de reemplazar
@@ -441,23 +464,29 @@
     
                     plantillas.forEach(function (plantilla) {
                         var item = $('<div class="navi-list-item"></div>');
-                        item.append('<span class="navi-plantilla-nombre" data-id="' + plantilla.id + '">' + plantilla.nombre + '</span>');
-                    
-                        // Crear el contenedor de botones
-                        var buttonContainer = $('<div class="container-btns" style="display: flex; gap: 0.5rem"></div>');
-                    
-                        // Añadir los botones dentro del contenedor
-                        buttonContainer.append('<button class="navi-button navi-button-secondary editar-nombre-plantilla" data-id="' + plantilla.id + '">Editar Nombre</button>');
-                        buttonContainer.append('<button class="navi-button navi-button-secondary reemplazar-plantilla" data-id="' + plantilla.id + '">Reemplazar</button>');
-                        buttonContainer.append('<button class="navi-button navi-button-danger eliminar-plantilla" data-id="' + plantilla.id + '">Eliminar</button>');
-                    
-                        // Añadir el contenedor de botones al item
-                        item.append(buttonContainer);
-                    
-                        // Añadir el item a la lista de plantillas
+                        
+                        // Contenedor para el nombre y botones de edición
+                        var nombreContainer = $('<div class="nombre-container"></div>');
+                        nombreContainer.append(
+                            '<span class="navi-plantilla-nombre" data-id="' + plantilla.id + '">' + 
+                            plantilla.nombre + 
+                            '</span>'
+                        );
+                        
+                        // Contenedor para todos los botones de acción
+                        var botonesContainer = $('<div class="botones-container"></div>');
+                        botonesContainer.append(
+                            '<button class="navi-button navi-button-secondary editar-nombre-plantilla" ' +
+                            'data-id="' + plantilla.id + '">Editar Nombre</button>' +
+                            '<button class="navi-button navi-button-primary reemplazar-plantilla" ' +
+                            'data-id="' + plantilla.id + '">Reemplazar</button>' +
+                            '<button class="navi-button navi-button-danger eliminar-plantilla" ' +
+                            'data-id="' + plantilla.id + '">Eliminar</button>'
+                        );
+    
+                        item.append(nombreContainer, botonesContainer);
                         listaPlantillas.append(item);
                     });
-                    
     
                     actualizarSelectsPlantillas(plantillas);
                 } else {
@@ -470,7 +499,8 @@
         });
     }
 
-    function guardarNombrePlantilla(plantillaId, nuevoNombre, boton) {
+    // Función para guardar el nombre de la plantilla
+    function guardarNombrePlantilla(plantillaId, nuevoNombre, nombreContainer) {
         $.ajax({
             url: navi_ajax.ajax_url,
             type: 'POST',
@@ -482,9 +512,14 @@
             },
             success: function (response) {
                 if (response.success) {
-                    var nombreSpan = boton.siblings('.navi-plantilla-nombre');
-                    nombreSpan.text(nuevoNombre);
-                    boton.text('Editar Nombre').removeClass('guardar-nombre-plantilla').addClass('editar-nombre-plantilla');
+                    // Actualizar el span con el nuevo nombre
+                    var nombreSpan = nombreContainer.find('.navi-plantilla-nombre');
+                    nombreSpan.text(nuevoNombre).show();
+
+                    // Eliminar los elementos de edición
+                    nombreContainer.find('.editar-nombre-input, .guardar-nombre-plantilla, .cancelar-edicion-nombre').remove();
+
+                    // Actualizar los selectores
                     actualizarSelectsPlantillas();
                 } else {
                     alert('Error al guardar el nuevo nombre: ' + response.data);
