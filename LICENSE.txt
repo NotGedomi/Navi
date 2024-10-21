@@ -1,6 +1,5 @@
 /**
  * Plugin Name: Navi
- * Plugin URI: https://tusitio.com/navi
  * Description: Navi carga ubicaciones desde Excel para registrar tiendas, clínicas o cualquier lugar con detalles personalizados. Usa Leaflet para mostrar un mapa interactivo y genera shortcodes con filtros dinámicos, mostrando solo las ubicaciones filtradas.
  * Version: 1.0
  * Author: Invitro Agencia
